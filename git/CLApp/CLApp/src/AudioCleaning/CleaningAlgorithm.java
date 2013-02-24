@@ -1138,7 +1138,7 @@ public class CleaningAlgorithm{
 		int offset;
 		
 		if(args.length<5){
-			System.out.println("Usage: java -jar cleaningAlgorithm.jar <head file output name> <windows enable (true or false)> <offset crosscorrelation> <path audiofile (min 2)>");
+			System.err.println("Usage: java -jar cleaningAlgorithm.jar <head file output name> <windows enable (true or false)> <offset crosscorrelation> <path audiofile (min 2)>");
 			return;
 		}
 		name=args[0];
