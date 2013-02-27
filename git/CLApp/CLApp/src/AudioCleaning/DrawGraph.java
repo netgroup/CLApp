@@ -29,7 +29,7 @@ public class DrawGraph {
 	}
 	
 	public static void createImage(float[] fs, String name){
-		CleaningAlgorithm.save("temp.wav", CleaningAlgorithm.convertFloatsToDoubles(fs));
+		WaveManipulation.save("temp.wav", WaveManipulation.convertFloatsToDoubles(fs));
 		Wave w=new Wave("temp.wav");
 		File f;
 		GraphicRender r=new GraphicRender();
