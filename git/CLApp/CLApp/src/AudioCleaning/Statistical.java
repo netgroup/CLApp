@@ -119,5 +119,62 @@ public class Statistical {
 		variance=sum2/(n-1);
 		return variance;
 	}
-
+	
+	public static double meanpwr(float f[]){
+		double result=0;
+		int i;
+		for(i=0;i<f.length;i++){
+			result+=f[i];
+		}
+		return result/i;
+	}
+	
+	public static double normalizedRMSE(float[] f1, float[] f2){
+		double poweravgF1=meanpwr(f1);
+		double poweravgF2=meanpwr(f2);
+		
+		for(int i=0;i<f2.length;i++){
+			f2[i]*=(poweravgF1/poweravgF2);
+		}
+		return RMSE(f1,f2);
+	}
+	
+	public static double RMSE(float[] f1, float[] f2){
+		double result=0, sum=0;
+		int i=0, j=0;
+		
+		for(i=0,j=0;i<f1.length && j<f2.length;i++,j++){
+			sum=f1[i]-f2[j];
+			result+=Math.pow(sum, 2);
+		}
+		result/=i<j ? i : j;
+		result=Math.sqrt(result);
+		return result;
+	}
+	
+	public static double RMSE(float[] f1, float[] f2, float[] h, int index){
+		double result=0, sum=0;
+		int i=0, j=0;
+		
+		for(i=0,j=0;i<f1.length && j<f2.length;i++,j++){
+			sum=(f1[i]/h[index])-f2[j];
+			result+=Math.pow(sum, 2);
+		}
+		result/=i<j ? i : j;
+		result=Math.sqrt(result);
+		return result;
+	}
+	
+	public static double RMSE(float[] f1, float[] f2, float[][] h, int indexT, int indexW){
+		double result=0, sum=0;
+		int i=0, j=0;
+		
+		for(i=0,j=0;i<f1.length && j<f2.length;i++,j++){
+			sum=(f1[i]/h[indexT][indexW])-f2[j];
+			result+=Math.pow(sum, 2);
+		}
+		result/=i<j ? i : j;
+		result=Math.sqrt(result);
+		return result;
+	}
 }

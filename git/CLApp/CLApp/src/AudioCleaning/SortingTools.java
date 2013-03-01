@@ -75,7 +75,7 @@ public class SortingTools {
 	static void trackSort(Ranking[] factors) {
 		Ranking temp;
 		int j=0;
-		while(j<factors.length-2){
+		while(j<factors.length){
 			for(int i=0,z=1;i<(factors.length-1-j) && z<(factors.length-j);i++,z++){
 				if(factors[i].sigma>factors[z].sigma){
 					temp=factors[i];
@@ -92,7 +92,7 @@ public class SortingTools {
 	static void trackSort(Ranking[][] factors, int k) {
 		Ranking temp;
 		int j=0;
-		while(j<=factors.length-2){
+		while(j<=factors.length){
 			for(int i=0,z=1;i<(factors.length-1-j) && z<(factors.length-j);i++,z++){
 				if(factors[i][k].sigma>factors[z][k].sigma){
 					temp=factors[i][k];

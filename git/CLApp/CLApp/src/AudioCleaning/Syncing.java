@@ -7,7 +7,7 @@ import CorrelationMatrix.CorrelationMatrix;
 
 public class Syncing {
 
-	static boolean stamp=true;	//boolean to activate some messages
+	public static boolean stamp=true;	//boolean to activate some messages
 	static int MAXDELAY=1350000;	//max delay for the cross correlation
 	/* cross correlation to find the delay between the tracks, float version */
 	public static CorrelationCell xcross(float[] fs, float[] fs2, int offset){
@@ -15,29 +15,30 @@ public class Syncing {
 		int delay=0, delayS=0, bar=(MAXDELAY*2)/100;
 		int rangeDelay=MAXDELAY<fs.length ? MAXDELAY : fs.length;
 		
-		/* Uncomment to activate stamp of the array values
-		System.out.println("fs");
-		for(int i=0;i<fs.length;i++){
-			System.out.println(fs[i]+1);
-		}
-		System.out.println("\n");
+		if(stamp){
+			System.out.println("fs");
+			for(int i=0;i<fs.length;i++){
+				System.out.println(fs[i]+1);
+			}
+			System.out.println("\n");
 		
-		System.out.println("fs2");
-		for(int i=0;i<fs.length;i++){
-			System.out.println(fs2[i]+1);
+			System.out.println("fs2");
+			for(int i=0;i<fs.length;i++){
+				System.out.println(fs2[i]+1);
+			}
+			System.out.println("\n");
 		}
-		System.out.println("\n");
-		*/
 		for(delay=-rangeDelay;delay<=rangeDelay;delay+=offset){
 			//uncomment it to draw a progress bar
 			//if(delay%bar==0 && stamp)
-			//	System.out.print(">");
+				//System.out.print(">");
 			r=crosscorrelation(fs,fs2,delay,offset);
 			if(maxr<=r){
 				maxr=r;
 				delayS=delay;
 			}
-			System.out.println("delay:"+delay+" \tr:"+r);
+			if(stamp)
+				System.out.println("delay:"+delay+" \tr:"+r);
 		}
 		if(stamp)
 			System.out.println("\n");
@@ -239,8 +240,7 @@ public class Syncing {
 		CorrelationMatrix matrix=new CorrelationMatrix(CleaningAlgorithm.amplitudeReady.size());
 		for(int i=0;i<CleaningAlgorithm.amplitudeReady.size();i++){
 			for(int j=0;j<CleaningAlgorithm.amplitudeReady.size();j++){
-				if(stamp)
-					System.out.println("Tracks cross correlation:"+i+", "+j);
+				System.out.println("Tracks cross correlation:"+i+", "+j);
 				matrix.matrix[i][j]=Syncing.xcross(CleaningAlgorithm.amplitudeReady.get(i),CleaningAlgorithm.amplitudeReady.get(j), offset);
 			}
 		}
