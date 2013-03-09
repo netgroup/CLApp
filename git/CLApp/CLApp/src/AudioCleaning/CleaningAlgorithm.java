@@ -1,6 +1,5 @@
 package AudioCleaning;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.text.DecimalFormat;
@@ -15,180 +14,6 @@ public class CleaningAlgorithm{
 	public static ArrayList<float[]> normalizedAmplitudes; //amplitude in float values
 	public static ArrayList<float[]> amplitudeReady;		 //amplitude in float values with same lenght
 	static float[][] hToPlotW;		//matrix with the h value (windows mode)
-	static float[] hToPlot;
-
-	//Tracks normalization
-	public static void normalization(int ref){
-		float c1=0, c2;
-		hToPlot=new float[amplitudeReady.size()];
-		
-		//covariance between the first and the second track
-		if(ref!=0)
-			c2=Statistical.covariance(amplitudeReady.get(ref),amplitudeReady.get(0));
-		else
-			c2=Statistical.covariance(amplitudeReady.get(ref),amplitudeReady.get(1));
-		float[] sigma=new float[amplitudeReady.size()-1];
-		System.out.println("Covariance 0vs1: "+c2);
-		float[] factors= new float[amplitudeReady.size()];
-		//second track ranking initialization
-		factors[1]=(float)1.0;
-		System.out.println("h: "+factors[1]+"\n");
-		//computing the other tracks h factor
-		for(int i=0;i<amplitudeReady.size();i++){
-			if(ref!=i){
-				c1=Statistical.covariance(amplitudeReady.get(ref),amplitudeReady.get(i));
-				System.out.println("Covariance "+ref+"vs"+(i)+": "+c1);
-				factors[i]=c2/c1;
-				System.out.println("h: "+factors[i]+"\n");
-			}
-		}
-		for(int i=0;i<amplitudeReady.size();i++){
-			if(ref!=i){
-				for(int j=0;j<amplitudeReady.get(i).length;j++){
-					amplitudeReady.get(i)[j]*=factors[i];
-				}
-				if(i<ref)
-					sigma[i]=Statistical.variance(amplitudeReady.get(i));
-				else
-					sigma[i-1]=Statistical.variance(amplitudeReady.get(i));
-			}
-		}
-		//computing first track ranking with the track with lowest variance
-		int k=SortingTools.min(sigma);
-		if(k>=ref)
-			k+=1;
-		System.out.println("Min Track Temp: "+(k)+"\n");
-		c1=Statistical.covariance(amplitudeReady.get(k),amplitudeReady.get(ref));
-		System.out.println("Covariance "+k+"vs"+ref+": "+c1);
-		factors[ref]=c2/c1;
-		System.out.println("h: "+factors[ref]+"\n");
-		//for(int i=0;i<k;i++){
-		for(int j=0;j<amplitudeReady.get(ref).length;j++){
-			amplitudeReady.get(ref)[j]*=factors[ref];
-		}
-		hToPlot=factors;
-		//}
-	}
-	
-	//Populates the Rankings Array
-	public static Ranking[] ranking(){
-		Ranking[] sigma=new Ranking[amplitudeReady.size()];
-		
-		for(int i=0;i<sigma.length;i++){
-			sigma[i]=new Ranking();
-			sigma[i].sigma=Statistical.variance(amplitudeReady.get(i));
-			sigma[i].pos=i;
-		}
-		SortingTools.trackSort(sigma);
-		System.out.println("Ranking");
-		for(int i=0; i<sigma.length; i++){
-			System.out.println("Position "+i+"-> sigma^2: "+sigma[i].sigma+"; track: "+(sigma[i].pos));
-		}
-		return sigma;
-	}
-	
-	//Computes the poweravg array
-	public static float[] poweravg(Ranking[] factors){
-		float temp[]=new float[amplitudeReady.get(0).length];
-		float poweravg[]=new float[amplitudeReady.size()];
-		
-		int h=0;
-		while(h<amplitudeReady.size()){
-			int j=factors[h].pos;
-			for(int i=0;i<amplitudeReady.get(j).length;i++){
-				temp[i]+=(amplitudeReady.get(j)[i]);
-				temp[i]/=(h+1);
-			}
-			poweravg[h]=Statistical.variance(temp);
-			for(int i=0;i<amplitudeReady.get(j).length;i++){
-				temp[i]*=(h+1);
-			}
-			h++;
-		}	
-		return poweravg;
-	}
-	
-	//Combining function for the final track
-	public static float[] combining(Ranking[] factors, int k){
-		int h=0;
-		float[] temp=new float[amplitudeReady.get(0).length];
-		System.out.println("Best track combining "+(k)+" tracks");
-		int j=0;
-		while(h<=k){
-			j=factors[h].pos;
-			for(int i=0;i<amplitudeReady.get(j).length;i++){
-				temp[i]+=(amplitudeReady.get(j)[i]);
-			}
-			h++;
-		}
-		for(int i=0;i<temp.length;i++){
-			temp[i]/=(h);
-		}
-		return temp;
-	}
-	
-	//Function to compute the error removed
-	public static void errorTrack(float[] finalTrack, int k){
-		Wave render;
-		GraphicRender r=new GraphicRender();
-		File remove;
-
-		for(int i=0;i<amplitudeReady.size();i++){
-			for(int j=0;j<amplitudeReady.get(i).length;j++){
-				amplitudeReady.get(i)[j]=(((k+1)*amplitudeReady.get(i)[j])-finalTrack[j])/(k+1);
-			}
-			WaveManipulation.save(i+"-errorNoWind.wav",WaveManipulation.convertFloatsToDoubles(amplitudeReady.get(i)));
-			render=new Wave(i+"-errorNoWind.wav");
-			r.renderWaveform(render, name+(i)+"errorNoWind-file.jpg");
-			//remove=new File("errore.wav");
-			//remove.delete();
-			render=null;
-		}
-	}
-
-	//Algorithm without windows
-	public static void Algorithm(int ref){
-		Ranking[] ranked;
-		
-		normalization(ref);
-		// Sorting tracks
-		ranked=ranking();
-		// poweravg for all the tracks combination
-		float poweravg[]=poweravg(ranked);
-		System.out.println("Poweravg:");
-		for(int i=0;i<poweravg.length;i++){
-			System.out.print("Combining tracks ");
-			for(int j=0;j<=i;j++){
-				System.out.print(" "+(ranked[j].pos)+", ");
-			}
-			System.out.println(": "+poweravg[i]);
-		}
-		// computing lowest poweravg
-		int k=SortingTools.min(poweravg);
-		System.out.print("Combination with lowest poweravg: ");
-		for(int i=0; i<=k; i++){
-			System.out.print("track "+(ranked[i].pos));
-			if(i<k){
-				System.out.print(" + ");
-			}
-		}
-		System.out.println();
-		//TODO
-		//save("test.wav", convertFloatsToDoubles(amplitudeReady.get(0)));
-		float[] temp=combining(ranked, k);
-		for(int i=0;i<amplitudeReady.size();i++){
-			System.out.println("RMSE Track "+i+": "+Statistical.RMSE(temp, amplitudeReady.get(i)));
-		}
-		errorTrack(temp, k);
-		Wave renders;
-		GraphicRender r=new GraphicRender();
-		WaveManipulation.save(name+"-nonwindowed.wav", WaveManipulation.convertFloatsToDoubles(temp));
-		renders=new Wave(name+"-nonwindowed.wav");
-		r.renderWaveform(renders, name+"-nonwindowed.jpg");
-		System.out.println("Conversion completed!");
-		return;
-	}
-	
 	//Function for the windows creation
 	public static void windowsCreation(ArrayList<ArrayList<float[]>> windowed, int windows , int winLen, int lastWind){
 				
@@ -273,7 +98,7 @@ public class CleaningAlgorithm{
 		int k[]=new int[windowed.get(0).size()];
 		for(int i=0;i<k.length;i++){
 			k[i]=SortingTools.min(sigma, i);
-			if(i>=ref){
+			if(k[i]>=ref){
 				k[i]+=1;
 				System.out.println("Min temp windows "+i+": "+(k[i])+"; sigma^2 = "+sigma[k[i]-1][i]);
 			}
@@ -376,7 +201,7 @@ public class CleaningAlgorithm{
 		for(int j=0;j<windows;j++){
 			System.out.println("Windows "+j);
 			for(int i=0; i<sigma.length; i++){
-				System.out.println("Position "+i+"-> sigma^2: "+sigma[i][j].sigma+"; track: "+(sigma[i][j].pos+1));
+				System.out.println("Position "+i+"-> sigma^2: "+sigma[i][j].sigma+"; track: "+(sigma[i][j].pos));
 			}
 			System.out.println();
 		}
@@ -443,27 +268,32 @@ public class CleaningAlgorithm{
 	}
 	
 	//Computes the error, one window at time
-	public static void errorTrackWindow(ArrayList<ArrayList<float[]>> windowed, float[][] finalTrack, int[] m){
+	public static void errorTrackWindow(ArrayList<float[][]> tracks, float[][] finalTrack, int[] bestCombo){
 		Wave render;
 		GraphicRender r=new GraphicRender();
 		//File remove;
-		int windows=windowed.get(0).size();
-		int winLen=windowed.get(0).get(1).length;
-		int lastWin=windowed.get(0).get(windows-1).length;
+		int windows=tracks.get(0).length;
+		int winLen=tracks.get(0)[0].length;
+		int lastWin=tracks.get(0)[windows-1].length;
+		float[] temp=new float[windows*(winLen-1)+lastWin];
+		int multiplier=0;
 		
-		for(int i=0;i<windowed.size();i++){
-			for(int j=0;j<windowed.get(i).size();j++){
-				for(int z=0;z<windowed.get(i).get(j).length;z++){
-					windowed.get(i).get(j)[z]=(((m[j]+1)*windowed.get(i).get(j)[z])-finalTrack[j][z])/(m[j]+1);
+		for(int i=0;i<tracks.size();i++){
+			for(int j=0;j<windows;j++){
+				for(int z=0;z<tracks.get(i)[j].length;z++){
+					temp[multiplier+z]=(((bestCombo[j]+1)*tracks.get(i)[j][z])-finalTrack[j][z])/(bestCombo[j]+1);
 				}
+				multiplier+=winLen;
 			}
-			WaveManipulation.save(i+"-errorWind.wav",WaveManipulation.convertFloatsToDoubles(fromWindowedToNormal(windowed.get(i),windows,winLen,lastWin)));
+			WaveManipulation.save(i+"-errorWind.wav",WaveManipulation.convertFloatsToDoubles(temp));
 			render=new Wave(i+"-errorWind.wav");
 			
 			r.renderWaveform(render, name+(i)+"error-file-window"+windows+".jpg");
 			//remove=new File("errore.wav");
 			//remove.delete();
 			render=null;
+			multiplier=0;
+			temp=new float[windows*(winLen-1)+lastWin];
 		}
 	}
 	
@@ -511,16 +341,9 @@ public class CleaningAlgorithm{
 		return finalTrack;
 	}
 	
-	private static int computeNumWindows(int n){
-		if(amplitudeReady.get(0).length%(n*44100)==0)
-			return amplitudeReady.get(0).length/(n*44100);
-		else
-			return (amplitudeReady.get(0).length/(n*44100))+1;
-	}
-	
 	//Windowed Algorithm version
-	public static void windowedAlgorithm(int ref){
-		int windows=computeNumWindows(5);
+	public static void windowedAlgorithm(int ref) throws IOException{
+		int windows=AlgorithmWindows.computeNumWindows(1);
 		Ranking[][] ranked;
 		ArrayList<ArrayList<float[]>> windowed;
 		
@@ -544,21 +367,33 @@ public class CleaningAlgorithm{
 				hToPlotW[ranked[j][i].pos][i]=(float) 0.0;
 			}
 		}
-		PlotH.Plotting(hToPlotW);
+		//PlotH.Plotting(hToPlotW);
+		float[] data;
+		for(int i=0;i<windowed.size();i++){
+			//System.out.print("RMSE Track "+i+" by windows: {");
+			DataFile.fileCreate(hToPlotW[i], "hplot"+i);
+			//System.out.println("}");
+		}
 		float[][] temp=combiningWindows(windowed, m, ranked);
 		WaveManipulation.amplitudeNormalization(temp);
 		//windowed=null;
 		for(int i=0;i<windowed.size();i++){
-			System.out.print("RMSE Track "+i+" by windows: {");
+			//System.out.print("RMSE Track "+i+" by windows: {");
+			data=new float[windowed.get(0).size()];
 			for(int j=0;j<windowed.get(i).size();j++){
-				System.out.print(" "+Statistical. normalizedRMSE(temp[j], windowed.get(i).get(j))+",");
+				data[j]=(float) Statistical.normalizedRMSE(temp[j], windowed.get(i).get(j));
 			}
-			System.out.println("}");
+			DataFile.fileCreate(data, "dataRMSE"+i);
+			//System.out.println("}");
+		}
+		float[] finalTrack=fromWindowedToNormal(temp,windows,winLen,lastWind);
+		float[] RMSETot=new float[windowed.size()];
+		for(int i=0;i<windowed.size();i++){
+//			RMSETot[i]=(float) Statistical.RMSETotW(temp, windowed.get(i));
 		}
 		//ATTENTION: errorTrackWindows could modify windowed values!!
-		errorTrackWindow(windowed,temp, m);
+//		errorTrackWindow(windowed,temp, m);
 		/* converting tracks merging the windows */
-		float[] finalTrack=fromWindowedToNormal(temp,windows,winLen,lastWind);
 		WaveManipulation.save(name+"-windowed("+windows+").wav", WaveManipulation.convertFloatsToDoubles(finalTrack));
 		System.out.println("Conversion completed!");
 		return;
@@ -596,11 +431,12 @@ public class CleaningAlgorithm{
 		index=Syncing.selectionSyncronization(offset);	
 		// windowed algorithm
 		if(WINDOW){
-			windowedAlgorithm(index);
+			AlgorithmWindows.algorithm(index);
+			//windowedAlgorithm(index);
 		}
 		else{ // basic algorithm
 			System.out.println("Windows deactivated.\n");
-			Algorithm(index);			
+			Algorithm.algorithm(index);			
 		}
 	}
 }

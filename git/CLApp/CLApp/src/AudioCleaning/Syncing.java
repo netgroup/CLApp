@@ -1,6 +1,10 @@
 package AudioCleaning;
 
+import java.io.File;
 import java.util.ArrayList;
+
+import com.musicg.graphic.GraphicRender;
+import com.musicg.wave.Wave;
 
 import CorrelationMatrix.CorrelationCell;
 import CorrelationMatrix.CorrelationMatrix;
@@ -249,13 +253,28 @@ public class Syncing {
 	
 		int ref=matrix.maxRow();
 		/* syncing of the tracks refered to the track with maximum correlation*/
-		System.out.println("Maximum correlation track� "+(ref+1));
+		System.out.println("Maximum correlation track� "+(ref));
 		Syncing.syncronization(matrix, ref);
 		System.out.println("Tracks synced!\n");
+		for(int i=0;i<CleaningAlgorithm.amplitudeReady.size();i++){
+			Syncing.stampSynced(CleaningAlgorithm.amplitudeReady.get(i), "synced"+i+".jpg");
+		}
 		matrix=null;
 		return ref;
 	}
 
 	static float INF=Float.MAX_VALUE;
+	
+	public static void stampSynced(float[] t, String name){
+		Wave render;
+		GraphicRender r=new GraphicRender();
+		File f;
+		
+		WaveManipulation.save("temp.wav", WaveManipulation.convertFloatsToDoubles(t));
+		render=new Wave("temp.wav");
+		r.renderWaveform(render, name);
+		f=new File("temp.wav");
+		f.delete();
+	}
 
 }

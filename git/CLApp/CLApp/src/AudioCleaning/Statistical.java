@@ -130,13 +130,44 @@ public class Statistical {
 	}
 	
 	public static double normalizedRMSE(float[] f1, float[] f2){
-		double poweravgF1=meanpwr(f1);
-		double poweravgF2=meanpwr(f2);
+		double poweravgF1=RMS(f1);
+		double poweravgF2=RMS(f2);
+		float[] f2temp=new float[f2.length];
 		
 		for(int i=0;i<f2.length;i++){
-			f2[i]*=(poweravgF1/poweravgF2);
+			f2temp[i]=f2[i];
+			f2temp[i]*=(poweravgF1/poweravgF2);
 		}
-		return RMSE(f1,f2);
+		return RMSE(f1,f2temp);
+	}
+	
+	public static double normalizedRMSETotW(float[][] f1, float[][] f2){
+		double poweravgF1;
+		double poweravgF2;
+		float[][] f2temp=new float[f2.length][];
+		
+		for(int i=0;i<f2.length;i++){
+			poweravgF1=RMS(f1[i]);
+			poweravgF2=RMS(f2[i]);
+			f2temp[i]=new float[f2[i].length];
+			for(int j=0;j<f2[i].length;j++){
+				f2temp[i][j]=f2[i][j];
+				f2temp[i][j]*=(poweravgF1/poweravgF2);
+			}
+		}
+		return RMSETotW(f1,f2temp);
+	}
+	
+	public static double RMS(float[] f){
+		double result=0, sum=0;
+		int i=0;
+		
+		for(i=0;i<f.length;i++){
+			result+=Math.pow(f[i], 2);
+		}
+		result/=i;
+		result=Math.sqrt(result);
+		return result;
 	}
 	
 	public static double RMSE(float[] f1, float[] f2){
@@ -152,28 +183,18 @@ public class Statistical {
 		return result;
 	}
 	
-	public static double RMSE(float[] f1, float[] f2, float[] h, int index){
+	public static double RMSETotW(float[][] f1, float[][] f2){
 		double result=0, sum=0;
-		int i=0, j=0;
+		int i=0, j=0, z=0, s=0, tot=0;
 		
-		for(i=0,j=0;i<f1.length && j<f2.length;i++,j++){
-			sum=(f1[i]/h[index])-f2[j];
-			result+=Math.pow(sum, 2);
+		for(z=0,s=0;z<f1.length && s<f2.length;z++,s++){
+			for(i=0,j=0;i<f1[z].length && j<f2[s].length;i++,j++){
+				sum=f1[z][i]-f2[s][j];
+				tot++;
+				result+=Math.pow(sum, 2);
+			}
 		}
-		result/=i<j ? i : j;
-		result=Math.sqrt(result);
-		return result;
-	}
-	
-	public static double RMSE(float[] f1, float[] f2, float[][] h, int indexT, int indexW){
-		double result=0, sum=0;
-		int i=0, j=0;
-		
-		for(i=0,j=0;i<f1.length && j<f2.length;i++,j++){
-			sum=(f1[i]/h[indexT][indexW])-f2[j];
-			result+=Math.pow(sum, 2);
-		}
-		result/=i<j ? i : j;
+		result/=tot;
 		result=Math.sqrt(result);
 		return result;
 	}

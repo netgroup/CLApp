@@ -91,16 +91,19 @@ public class SortingTools {
 	/* sorting tracks with windows */
 	static void trackSort(Ranking[][] factors, int k) {
 		Ranking temp;
-		int j=0;
-		while(j<=factors.length){
-			for(int i=0,z=1;i<(factors.length-1-j) && z<(factors.length-j);i++,z++){
-				if(factors[i][k].sigma>factors[z][k].sigma){
-					temp=factors[i][k];
-					factors[i][k]=factors[z][k];
-					factors[z][k]=temp;
+		int length=factors.length;
+		boolean swap=true;
+		while(swap){
+			swap=false;
+			for(int i=1;i<length;i++){
+				if(factors[i-1][k].sigma>factors[i][k].sigma){
+					temp=factors[i-1][k];
+					factors[i-1][k]=factors[i][k];
+					factors[i][k]=temp;
+					swap=true;
 				}			
 			}
-			j++;
+			length--;
 		}
 	}	
 }

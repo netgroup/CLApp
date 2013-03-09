@@ -11,8 +11,6 @@ public class TestXref {
 	
 	static float INF=Float.MAX_VALUE;
 	public static final int SAMPLE_RATE = 44100;
-	private static final double MAX_16_BIT = Short.MAX_VALUE;     // 32,767
-
 	static boolean stamp=true;
 	static boolean windows=false;
 	
@@ -31,6 +29,8 @@ public class TestXref {
 		offset=Integer.parseInt(args[1]);
 		windows=Boolean.parseBoolean(args[2]);
 		
+		Syncing.stamp=false;
+		
 		for(int i=3;i<args.length;i++){
 			input=new  Wave(args[i]);
 			waveHead=input.getWaveHeader().getBitsPerSample();
@@ -45,10 +45,10 @@ public class TestXref {
 		if(!windows){
 			Ranking[] ranked;
 		
-			CleaningAlgorithm.normalization(index);
+			Algorithm.normalization(index);
 			System.out.println("Variance: "+Statistical.variance(CleaningAlgorithm.amplitudeReady.get(0)));
 			// sorting track by their variance
-			ranked=CleaningAlgorithm.ranking();
+			ranked=Algorithm.ranking();
 			/*
 			Wave renders;
 			int i=0, tmp;
@@ -79,7 +79,7 @@ public class TestXref {
 			return;
 		}
 		else{
-			int wind=12;
+			int wind=AlgorithmWindows.computeNumWindows(1);
 			Ranking[][] ranked;
 			int interval=(CleaningAlgorithm.amplitudeReady.get(0).length/wind), lastWind=0;
 			System.out.println("Windows activated.\n#windows: "+windows+"; window length: "+interval);

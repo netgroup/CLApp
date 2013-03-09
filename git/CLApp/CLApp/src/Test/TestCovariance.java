@@ -17,17 +17,18 @@ public class TestCovariance {
 		CleaningAlgorithm.amplitudeReady=new ArrayList<float[]>();
 		int offset;
 		
-		if(args.length<4){
+		if(args.length<3){
 			System.err.println("Usage: java -jar cleaningAlgorithm.jar <name> <offset crosscorrelation> <flag windows> <path audiofile (min 2)>");
 			return;
 		}
-		CleaningAlgorithm.name=args[0];
-		offset=Integer.parseInt(args[1]);
+		//CleaningAlgorithm.name=args[0];
+		offset=Integer.parseInt(args[0]);
 		//windows=Boolean.parseBoolean(args[2]);
 		
-		for(int i=2;i<args.length;i++){
+		for(int i=1;i<args.length;i++){
 			input=new  Wave(args[i]);
 			waveHead=input.getWaveHeader().getBitsPerSample();
+			Syncing.stamp=false;
 			CleaningAlgorithm.amplitude=input.getSampleAmplitudes();
 			WaveManipulation.getNormalizedAmplitudes(waveHead);
 			

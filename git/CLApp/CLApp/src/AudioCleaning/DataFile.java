@@ -6,17 +6,15 @@ import com.musicg.wave.Wave;
 public class DataFile {
 	
 	public static void fileCreate(float[] track, String name) throws IOException{
-		File data=new File(name+".txt");
-		double time;
+		File data=new File(name+".data");
 		data.createNewFile();
 		FileWriter flow=new FileWriter(data);
 		
 		for(int i=0;i<track.length;i++){
-			time=(i/44100.0);
-			flow.append(Double.toString(time)+" ");
-			flow.append(Float.toString(track[i]));
+			flow.append(Integer.toString(i)+"\t");
+			flow.append(Float.toString(track[i])+"\n");
 		}
-		
+		flow.close();	
 	}
 	
 	public static void fileCreate(double[] track, String name) throws IOException{

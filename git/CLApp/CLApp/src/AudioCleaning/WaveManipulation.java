@@ -83,12 +83,12 @@ public class WaveManipulation {
 	}
 	
 	public static void amplitudeNormalization(float[][] f){
-		float alpha=(float)0.8;
+		float alpha=(float)0.7;
 		double amplitudeN=0.0, amplitudeP=0.0, pwravgW=0.0;
 		
-		amplitudeP=Statistical.meanpwr(f[0]);
+		amplitudeP=Statistical.RMS(f[0]);
 		for(int i=1;i<f.length;i++){
-			pwravgW=Statistical.meanpwr(f[i]);
+			pwravgW=Statistical.RMS(f[i]);
 			amplitudeN=alpha*(pwravgW)+(1-alpha)*amplitudeP;
 			for(int j=0;j<f[i].length;j++){
 				f[i][j]*=amplitudeN/pwravgW;
