@@ -50,7 +50,7 @@ public class AlgorithmWindows {
 		tracks.trimToSize();
 	}
 	
-	public static void normalization(ArrayList<float[][]> tracks, int index){
+	public static void normalization(ArrayList<float[][]> tracks, int index) throws IOException{
 		int numWindows=tracks.get(0).length;
 		int indexFirst;
 		int bestSigma[] = new int[numWindows];
@@ -60,24 +60,36 @@ public class AlgorithmWindows {
 		
 		if(index!=0){
 			indexFirst=0;
+			System.out.println("Covariance by windows trackRef"+index+"VStrack"+indexFirst);
 			for(int i=0;i<numWindows;i++){
 				c2[i]=Statistical.covariance(tracks.get(index)[i], tracks.get(0)[i]);
 				hValue[0][i]=(float) 1.0;
+				System.out.println("Windows"+i+": "+c2[i]);
 			}
+			System.out.println();
+			DataFile.fileCreate(c2, "Cov"+indexFirst);
 		}
 		else{
 			indexFirst=1;
+			System.out.println("Covariance by windows trackRef"+index+"VStrack"+indexFirst);
 			for(int i=0;i<numWindows;i++){
 				c2[i]=Statistical.covariance(tracks.get(index)[i], tracks.get(1)[i]);
 				hValue[1][i]=(float) 1.0;
+				System.out.println("Windows"+i+": "+c2[i]);
 			}
+			System.out.println();
+			DataFile.fileCreate(c2, "Cov"+indexFirst);
 		}
 		for(int i=0;i<tracks.size();i++){
 			if(i!= index && i != indexFirst){
+				System.out.println("Covariance by windows trackRef"+index+"VStrack"+i);
 				for(int j=0;j<numWindows;j++){
 					c1[j]=Statistical.covariance(tracks.get(index)[j], tracks.get(i)[j]);
 					hValue[i][j]=(float) c2[j]/c1[j];
+					System.out.println("Windows"+j+": "+c1[j]);
 				}
+				System.out.println();
+				DataFile.fileCreate(c1, "Cov"+i);
 			}
 		}
 		for(int i=0;i<tracks.size();i++){
@@ -93,15 +105,21 @@ public class AlgorithmWindows {
 				}
 			}
 		}
+		System.out.println("Best ref by windows");
 		for(int i=0;i<numWindows;i++){
 			bestSigma[i]=SortingTools.min(sigma,i);
 			if(bestSigma[i]>=index)
 				bestSigma[i]++;
+			System.out.println("Window"+i+" -> track"+bestSigma[i]);
 		}
+		System.out.println("\nCovariance by windows bestRefVStrackRef"+index);
 		for(int i=0;i<numWindows;i++){
 			c1[i]=Statistical.covariance(tracks.get(bestSigma[i])[i], tracks.get(index)[i]);
 			hValue[index][i]=c2[i]/c1[i];
+			System.out.println("Windows"+i+" (ref:"+bestSigma[i]+": "+c1[i]);
 		}
+		System.out.println();
+		DataFile.fileCreate(c1, "Cov"+index);
 		for(int i=0;i<numWindows;i++){
 			for(int j=0;j<tracks.get(index)[i].length;j++){
 				tracks.get(index)[i][j]*=hValue[index][i];
@@ -236,15 +254,17 @@ public class AlgorithmWindows {
 		combinedTrack=combine(tracks,rank,bestCombo);
 		CleaningAlgorithm.errorTrackWindow(tracks,combinedTrack, bestCombo);
 		WaveManipulation.amplitudeNormalization(combinedTrack);
-		/* Warning: normalizedRMSE and normalizedRMSETotW could change the values of tracks */
+		/* (SOLVED) Warning: normalizedRMSE and normalizedRMSETotW could change the values of tracks */
 		for(int i=0;i<tracks.size();i++){
 			dataToStamp=new float[numWindows];
+			System.out.println("\nRMSE between final and initial track"+i+"(by window)");
 			for(int j=0;j<numWindows;j++){
 				dataToStamp[j]=(float) Statistical.normalizedRMSE(combinedTrack[j],tracks.get(i)[j]);
+				System.out.println("Window"+j+": "+dataToStamp[j]);
 			}
 			DataFile.fileCreate(dataToStamp, "dataRMSE"+i);
 		}
-		System.out.println("\nRMSE between the initial and final track (full track)");
+		System.out.println("\nRMSE between final and initial track (full track)");
 		for(int i=0;i<tracks.size();i++){
 			RMSETot=(float) Statistical.normalizedRMSETotW(combinedTrack, tracks.get(i));
 			System.out.println("Track"+i+": "+RMSETot);

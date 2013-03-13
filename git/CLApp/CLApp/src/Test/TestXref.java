@@ -1,5 +1,6 @@
 package Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import AudioCleaning.*;
@@ -14,7 +15,7 @@ public class TestXref {
 	static boolean stamp=true;
 	static boolean windows=false;
 	
-	public static void main(String[] args){
+	public static void main(String[] args) throws IOException{
 		Wave input;
 		int waveHead;
 		CleaningAlgorithm.normalizedAmplitudes=new ArrayList<float[]>();
@@ -83,13 +84,13 @@ public class TestXref {
 			Ranking[][] ranked;
 			int interval=(CleaningAlgorithm.amplitudeReady.get(0).length/wind), lastWind=0;
 			System.out.println("Windows activated.\n#windows: "+windows+"; window length: "+interval);
-			ArrayList<ArrayList<float[]>> windowed=new ArrayList<ArrayList<float[]>>();
+			ArrayList<float[][]> windowed=new ArrayList<float[][]>();
 			
-			CleaningAlgorithm.windowsCreation(windowed, wind, interval, lastWind);
+			AlgorithmWindows.windowsCreation(windowed, wind, interval, lastWind);
 			
-			CleaningAlgorithm.normalizationWindows(windowed,wind,index);
+			AlgorithmWindows.normalization(windowed,index);
 			// sorting track by their variance
-			ranked=CleaningAlgorithm.rankingWindows(windowed);
+			ranked=AlgorithmWindows.ranking(windowed);
 			/*
 		
 			Wave renders;
