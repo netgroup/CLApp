@@ -17,6 +17,18 @@ public class DataFile {
 		flow.close();	
 	}
 	
+	public static void fileCreate(int[] bestCombo, String name) throws IOException{
+		File data=new File(name+".data");
+		data.createNewFile();
+		FileWriter flow=new FileWriter(data);
+		
+		for(int i=0;i<bestCombo.length;i++){
+			flow.append(Integer.toString(i)+"\t");
+			flow.append(Integer.toString(bestCombo[i]+1)+"\n");
+		}
+		flow.close();	
+	}
+	
 	public static void fileCreate(double[] track, String name) throws IOException{
 		File data=new File(name+".dat");
 		double time;

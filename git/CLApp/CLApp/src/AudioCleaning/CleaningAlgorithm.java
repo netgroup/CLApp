@@ -22,17 +22,35 @@ public class CleaningAlgorithm{
 		int windows=tracks.get(0).length;
 		int winLen=tracks.get(0)[0].length;
 		int lastWin=tracks.get(0)[windows-1].length;
-		float[] temp=new float[windows*(winLen-1)+lastWin];
+		float[][] temp=new float[windows][];
 		int multiplier=0;
+	
+		WaveManipulation.save("PrecomparisonFinal.wav",WaveManipulation.convertFloatsToDoubles(AlgorithmWindows.mergingWindows(finalTrack)));
+		render=new Wave("PrecomparisonFinal.wav");
+		r.renderWaveform(render, "PrecomparisonFinal.wav.jpg");
+		//remove=new File("errore.wav");
+		//remove.delete();
+		render=null;
 		
 		for(int i=0;i<tracks.size();i++){
+			WaveManipulation.save("PrecomparisonTrack"+i+".wav",WaveManipulation.convertFloatsToDoubles(AlgorithmWindows.mergingWindows(tracks.get(i))));
+			render=new Wave("PrecomparisonTrack"+i+".wav");
+			r.renderWaveform(render, "PrecomparisonTrack"+i+".wav.jpg");
+			//remove=new File("errore.wav");
+			//remove.delete();
+			render=null;
+			
 			for(int j=0;j<windows;j++){
+				double rms_final = Statistical.avg_mod(finalTrack[j]);
+				double rms_track_i = Statistical.avg_mod(tracks.get(i)[j]);
+				temp[j]=new float[tracks.get(i)[j].length];
 				for(int z=0;z<tracks.get(i)[j].length;z++){
-					temp[multiplier+z]=(((bestCombo[j]+1)*tracks.get(i)[j][z])-finalTrack[j][z])/(bestCombo[j]+1);
+					//temp[multiplier+z]=(((bestCombo[j]+1)*tracks.get(i)[j][z])-finalTrack[j][z])/(bestCombo[j]+1);
+					temp[j][z] =(float) (tracks.get(i)[j][z] * rms_final /rms_track_i - finalTrack[j][z]);
 				}
-				multiplier+=winLen;
+				//multiplier+=winLen;
 			}
-			WaveManipulation.save(i+"-errorWind.wav",WaveManipulation.convertFloatsToDoubles(temp));
+			WaveManipulation.save(i+"-errorWind.wav",WaveManipulation.convertFloatsToDoubles(AlgorithmWindows.mergingWindows(temp)));
 			render=new Wave(i+"-errorWind.wav");
 			
 			r.renderWaveform(render, name+(i)+"error-file-window"+windows+".jpg");
@@ -40,13 +58,14 @@ public class CleaningAlgorithm{
 			//remove.delete();
 			render=null;
 			multiplier=0;
-			temp=new float[windows*(winLen-1)+lastWin];
+			temp=new float[windows][];
 		}
 	}
 	
 	public static void main(String[] args) throws IOException{
 		Wave input;
-		int waveHead, index;
+		int waveHead;
+		int[] index=new int[2];
 		normalizedAmplitudes=new ArrayList<float[]>();
 		amplitudeReady=new ArrayList<float[]>();
 		int offset;
@@ -76,12 +95,13 @@ public class CleaningAlgorithm{
 		index=Syncing.selectionSyncronization(offset);	
 		// windowed algorithm
 		if(WINDOW){
-			AlgorithmWindows.algorithm(index);
+			AlgorithmWindows.algorithm(index[0],index[1]);
 			//windowedAlgorithm(index);
 		}
 		else{ // basic algorithm
 			System.out.println("Windows deactivated.\n");
-			Algorithm.algorithm(index);			
+			//WARNING: the function without windows isn't updated!!
+			Algorithm.algorithm(index[0],index[1]);			
 		}
 	}
 }

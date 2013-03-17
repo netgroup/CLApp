@@ -139,7 +139,7 @@ public class Algorithm {
 	}
 
 	//Algorithm without windows
-	public static void algorithm(int ref){
+	public static void algorithm(int ref, int secondRef){
 		Ranking[] ranked;
 		
 		normalization(ref);

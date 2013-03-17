@@ -41,12 +41,12 @@ public class TestXref {
 		}
 		CleaningAlgorithm.normalizedAmplitudes.trimToSize();
 		Syncing.zeroPadding();
-		int index=Syncing.selectionSyncronization(offset);
+		int[] index=Syncing.selectionSyncronization(offset);
 		
 		if(!windows){
 			Ranking[] ranked;
 		
-			Algorithm.normalization(index);
+			Algorithm.normalization(index[0]);
 			System.out.println("Variance: "+Statistical.variance(CleaningAlgorithm.amplitudeReady.get(0)));
 			// sorting track by their variance
 			ranked=Algorithm.ranking();
@@ -86,9 +86,9 @@ public class TestXref {
 			System.out.println("Windows activated.\n#windows: "+windows+"; window length: "+interval);
 			ArrayList<float[][]> windowed=new ArrayList<float[][]>();
 			
-			AlgorithmWindows.windowsCreation(windowed, wind, interval, lastWind);
+			lastWind=AlgorithmWindows.windowsCreation(windowed, wind, interval);
 			
-			AlgorithmWindows.normalization(windowed,index);
+			AlgorithmWindows.normalization(windowed,index[0],index[1]);
 			// sorting track by their variance
 			ranked=AlgorithmWindows.ranking(windowed);
 			/*

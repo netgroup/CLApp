@@ -12,6 +12,7 @@ public class WaveManipulation {
 
 	public static final int SAMPLE_RATE = 44100;
 	private static final double MAX_16_BIT = Short.MAX_VALUE;     // 32,767
+	
 	public static double[] convertFloatsToDoubles(float[] input)
 	{
 	    if (input == null)
@@ -83,7 +84,7 @@ public class WaveManipulation {
 	}
 	
 	public static void amplitudeNormalization(float[][] f){
-		float alpha=(float)0.7;
+		float alpha=(float)0.9;
 		double amplitudeN=0.0, amplitudeP=0.0, pwravgW=0.0;
 		
 		amplitudeP=Statistical.RMS(f[0]);

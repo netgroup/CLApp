@@ -129,9 +129,10 @@ public class Statistical {
 		return result/i;
 	}
 	
+	
 	public static double normalizedRMSE(float[] f1, float[] f2){
-		double poweravgF1=RMS(f1);
-		double poweravgF2=RMS(f2);
+		double poweravgF1=avg_mod(f1);
+		double poweravgF2=avg_mod(f2);
 		float[] f2temp=new float[f2.length];
 		
 		for(int i=0;i<f2.length;i++){
@@ -147,8 +148,8 @@ public class Statistical {
 		float[][] f2temp=new float[f2.length][];
 		
 		for(int i=0;i<f2.length;i++){
-			poweravgF1=RMS(f1[i]);
-			poweravgF2=RMS(f2[i]);
+			poweravgF1=avg_mod(f1[i]);
+			poweravgF2=avg_mod(f2[i]);
 			f2temp[i]=new float[f2[i].length];
 			for(int j=0;j<f2[i].length;j++){
 				f2temp[i][j]=f2[i][j];
@@ -169,6 +170,17 @@ public class Statistical {
 		result=Math.sqrt(result);
 		return result;
 	}
+	
+	
+	public static double avg_mod(float[] f){
+		double result=0;
+		
+		for(int i=0;i<f.length;i++){
+			result+=Math.abs(f[i]);
+		}
+		return result/((double) f.length);
+	}
+	
 	
 	public static double RMSE(float[] f1, float[] f2){
 		double result=0, sum=0;

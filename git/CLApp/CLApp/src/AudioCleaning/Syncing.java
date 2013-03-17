@@ -237,7 +237,7 @@ public class Syncing {
 	}
 
 	//Function to sync the traces
-	public static int selectionSyncronization(int winLen){
+	public static int[] selectionSyncronization(int winLen){
 		int offset=winLen;
 		System.out.println("Longest track: "+CleaningAlgorithm.amplitudeReady.get(0).length);
 		/* cross correlation matrix creation */
@@ -251,10 +251,12 @@ public class Syncing {
 		System.out.print("Creating correlation matrix...\n\n");
 		matrix.stamp();
 	
-		int ref=matrix.maxRow();
+		int[] ref=new int[2];
+		ref[0]=matrix.maxRow();
+		ref[1]=matrix.secondMaxRow();
 		/* syncing of the tracks refered to the track with maximum correlation*/
-		System.out.println("Maximum correlation track� "+(ref));
-		Syncing.syncronization(matrix, ref);
+		System.out.println("Maximum correlation track "+(ref[0])+", second: "+ref[1]);
+		Syncing.syncronization(matrix, ref[0]);
 		System.out.println("Tracks synced!\n");
 		for(int i=0;i<CleaningAlgorithm.amplitudeReady.size();i++){
 			Syncing.stampSynced(CleaningAlgorithm.amplitudeReady.get(i), "synced"+i+".jpg");

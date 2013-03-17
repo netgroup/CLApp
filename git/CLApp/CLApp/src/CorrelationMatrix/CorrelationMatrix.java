@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 public class CorrelationMatrix {
 	public CorrelationCell[][] matrix;
 	public int dimension;
+	public Integer maxRow=null;
 	
 	CorrelationMatrix(){
 	}
@@ -17,6 +18,10 @@ public class CorrelationMatrix {
 		float max=0, sum=0;
 		int indice=0;
 		
+		if(maxRow!=null){
+			return maxRow;
+		}
+		
 		for(int i=0;i<dimension;i++){
 			sum=0;
 			for(int j=0;j<dimension;j++){
@@ -27,7 +32,30 @@ public class CorrelationMatrix {
 				indice=i;
 			}
 		}
+		maxRow=indice;
+		return indice;
+	}
+	
+	public int secondMaxRow(){
+		float max=0, sum=0;
+		int indice=0;
 		
+		if(maxRow!=null){
+			maxRow();
+		}
+		
+		for(int i=0;i<dimension;i++){
+			if(i!=maxRow){
+				sum=0;
+				for(int j=0;j<dimension;j++){
+					sum+=matrix[i][j].correlation;
+				}
+				if(max<sum){
+					max=sum;
+					indice=i;
+				}
+			}
+		}
 		return indice;
 	}
 	//function to draw the matrix
