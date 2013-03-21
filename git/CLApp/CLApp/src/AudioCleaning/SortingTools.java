@@ -28,6 +28,16 @@ public class SortingTools {
 		}
 		return k;
 	}
+	
+	static float peak(float[] amplitudes){
+		float max=Float.MIN_VALUE;
+		for(int i=0;i<amplitudes.length;i++){
+			if(max<Math.abs(amplitudes[i])){
+				max=Math.abs(amplitudes[i]);
+			}
+		}
+		return max;
+	}
 
 	//compute minimum value like the previous function, with doubles matrix
 	@SuppressWarnings("unused")

@@ -8,7 +8,7 @@ import com.musicg.wave.Wave;
 
 public class AlgorithmWindows {
 	public static final int SAMPLE_RATE = 44100;
-	public static final double sampleRateDivider = 100;
+	public static final double sampleRateDivider = 1;
 	public static float[][] hToPlotW;
 
 	public static int computeNumWindows(double n){
@@ -91,7 +91,7 @@ public class AlgorithmWindows {
 				for(int j=0;j<numWindows;j++){
 					c1[j]=Statistical.covariance(tracks.get(index)[j], tracks.get(i)[j]);
 					hValue[i][j]=(float) c2[j]/c1[j];
-					System.out.println("Windows"+j+": "+c1[j]+", h->"+hValue[i][j]);
+					System.out.println("Windows"+j+": "+c1[j]+", h->"+hValue[i][j]+", Cov to reach: "+c2[j]);
 				}
 				System.out.println();
 				DataFile.fileCreate(c1, "Cov"+i);
@@ -121,7 +121,7 @@ public class AlgorithmWindows {
 		for(int i=0;i<numWindows;i++){
 			c1[i]=Statistical.covariance(tracks.get(bestSigma[i])[i], tracks.get(index)[i]);
 			hValue[index][i]=c2[i]/c1[i];
-			System.out.println("Windows"+i+" (ref:"+bestSigma[i]+"): "+c1[i]+", h->"+hValue[index][i]);
+			System.out.println("Windows"+i+" (ref:"+bestSigma[i]+"): "+c1[i]+", h->"+hValue[index][i]+", Cov to reach: "+c2[i]);
 		}
 		System.out.println();
 		DataFile.fileCreate(c1, "Cov"+index);
@@ -291,7 +291,7 @@ public class AlgorithmWindows {
 		CleaningAlgorithm.errorTrackWindow(tracks,combinedTrack, bestCombo);
 		*/
 		/* Warning: mergingWindows deletes combinedTrack at the end! */
-		//WaveManipulation.amplitudeNormalization(combinedTrack);
+		WaveManipulation.amplitudeNormalization(combinedTrack);
 		combinedWithoutWindows=mergingWindows(combinedTrack);
 		WaveManipulation.save(CleaningAlgorithm.name+"("+numWindows+").wav", WaveManipulation.convertFloatsToDoubles(combinedWithoutWindows));
 		Wave toRender=new Wave(CleaningAlgorithm.name+"("+numWindows+").wav");

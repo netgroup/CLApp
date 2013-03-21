@@ -97,5 +97,29 @@ public class WaveManipulation {
 			amplitudeP=amplitudeN;
 		}
 	}
+	
+	//TODO insert those function and test it!
+	private static float alphaValue(int length){
+		for(int i=5;i>0;i--){
+			if(length>Math.pow(10, i)){
+				return (float) (((float) i)/10.0); 
+			}
+		}
+		return (float) 1.0;
+	}
+	
+	public static void normalization0dbwithMem(float[][] track){
+		float alpha, gammaOld=(float) 0.0, gammaNow, peak, maxAmpl=(float) 1.0;
+		
+		for(int i=0;i<track.length;i++){
+			alpha=alphaValue(track[i].length);
+			peak=SortingTools.peak(track[i]);
+			gammaNow=(maxAmpl/peak)*alpha+gammaOld*(1-alpha);
+			for(int j=0;j<track[i].length;j++){
+				track[i][j]*=gammaNow;
+			}
+			gammaOld=gammaNow;
+		}
+	}
 
 }
