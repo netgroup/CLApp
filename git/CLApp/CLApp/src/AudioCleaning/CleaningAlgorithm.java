@@ -94,14 +94,14 @@ public class CleaningAlgorithm{
 		Syncing.zeroPadding();
 		index=Syncing.selectionSyncronization(offset);	
 		// windowed algorithm
-		if(WINDOW){
+		if(WINDOW || !WINDOW){
 			AlgorithmWindows.algorithm(index[0],index[1]);
 			//windowedAlgorithm(index);
 		}
-		else{ // basic algorithm
+		/*else{ // basic algorithm
 			System.out.println("Windows deactivated.\n");
 			//WARNING: the function without windows isn't updated!!
 			Algorithm.algorithm(index[0],index[1]);			
-		}
+		}*/
 	}
 }

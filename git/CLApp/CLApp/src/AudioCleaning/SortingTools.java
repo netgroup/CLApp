@@ -106,7 +106,7 @@ public class SortingTools {
 		while(swap){
 			swap=false;
 			for(int i=1;i<length;i++){
-				if(factors[i-1][k].sigma>factors[i][k].sigma){
+				if((factors[i-1][k].sigma>factors[i][k].sigma && factors[i][k].sigma!=0) || factors[i-1][k].sigma==0){
 					temp=factors[i-1][k];
 					factors[i-1][k]=factors[i][k];
 					factors[i][k]=temp;

@@ -102,23 +102,47 @@ public class WaveManipulation {
 	private static float alphaValue(int length){
 		for(int i=5;i>0;i--){
 			if(length>Math.pow(10, i)){
-				return (float) (((float) i)/10.0); 
+				return (float) (((float) i+4)/10.0); 
 			}
 		}
 		return (float) 1.0;
 	}
 	
 	public static void normalization0dbwithMem(float[][] track){
-		float alpha, gammaOld=(float) 0.0, gammaNow, peak, maxAmpl=(float) 1.0;
+		float alpha=(float) 0.8, gammaOld=(float) 0.0, gammaNow, peak, maxAmpl=(float) 0.8;
 		
 		for(int i=0;i<track.length;i++){
-			alpha=alphaValue(track[i].length);
+			//alpha=alphaValue(track[i].length);
 			peak=SortingTools.peak(track[i]);
 			gammaNow=(maxAmpl/peak)*alpha+gammaOld*(1-alpha);
 			for(int j=0;j<track[i].length;j++){
 				track[i][j]*=gammaNow;
 			}
 			gammaOld=gammaNow;
+		}
+	}
+	
+	public static void normalizationMinus0dot2db(float[] track){
+		float alpha=(float) 0.8, gammaOld=(float) 0.0, gammaNow, peak, maxAmpl=(float) 0.8;
+		int counter=0, numWind=0;
+		float[] temp=new float[SAMPLE_RATE];
+		
+		for(int i=0;i<track.length;i++){
+			if(counter<SAMPLE_RATE){
+				temp[counter]=track[i];
+				counter++;
+			}
+			else{	
+				peak=SortingTools.peak(temp);
+				gammaNow=(maxAmpl/peak)*alpha+gammaOld*(1-alpha);
+				for(int j=numWind;j<(track.length+numWind);j++){
+					track[i]*=gammaNow;
+				}
+				numWind++;
+				counter=0;
+				gammaOld=gammaNow;
+				i--;
+			}
 		}
 	}
 

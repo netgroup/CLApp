@@ -8,7 +8,7 @@ import com.musicg.wave.Wave;
 
 public class AlgorithmWindows {
 	public static final int SAMPLE_RATE = 44100;
-	public static final double sampleRateDivider = 1;
+	public static final double sampleRateDivider = 100;
 	public static float[][] hToPlotW;
 
 	public static int computeNumWindows(double n){
@@ -90,7 +90,12 @@ public class AlgorithmWindows {
 				System.out.println("Covariance by windows trackRef"+index+"VStrack"+i);
 				for(int j=0;j<numWindows;j++){
 					c1[j]=Statistical.covariance(tracks.get(index)[j], tracks.get(i)[j]);
-					hValue[i][j]=(float) c2[j]/c1[j];
+					if(c1[j]==0)
+						hValue[i][j]=(float)0.0;
+					else if(c2[j]==0)
+						hValue[i][j]=(float)1.0;
+					else
+						hValue[i][j]=(float) c2[j]/c1[j];
 					System.out.println("Windows"+j+": "+c1[j]+", h->"+hValue[i][j]+", Cov to reach: "+c2[j]);
 				}
 				System.out.println();
@@ -120,7 +125,12 @@ public class AlgorithmWindows {
 		System.out.println("\nCovariance by windows bestRefVStrackRef"+index);
 		for(int i=0;i<numWindows;i++){
 			c1[i]=Statistical.covariance(tracks.get(bestSigma[i])[i], tracks.get(index)[i]);
-			hValue[index][i]=c2[i]/c1[i];
+			if(c1[i]==0)
+				hValue[index][i]=(float)0.0;
+			else if(c2[i]==0)
+				hValue[index][i]=(float)1.0;
+			else
+				hValue[index][i]=c2[i]/c1[i];
 			System.out.println("Windows"+i+" (ref:"+bestSigma[i]+"): "+c1[i]+", h->"+hValue[index][i]+", Cov to reach: "+c2[i]);
 		}
 		System.out.println();
@@ -204,7 +214,8 @@ public class AlgorithmWindows {
 		for(int i=0;i<tracks.size();i++){
 			for(int j=0;j<tracks.get(i).length;j++){
 				for(int h=0;h<tracks.get(i)[j].length;h++){
-					tracks.get(i)[j][h]/=hToPlotW[i][j];
+					if(hToPlotW[i][j]!=0)
+						tracks.get(i)[j][h]/=hToPlotW[i][j];
 				}
 			}
 		}
@@ -230,7 +241,15 @@ public class AlgorithmWindows {
 	}
 	
 	public static void algorithm(int index, int secondIndex) throws IOException{
-		int numWindows=computeNumWindows(sampleRateDivider), windowsLenght=(int) (SAMPLE_RATE/sampleRateDivider); 
+		int numWindows, windowsLenght;
+		if(CleaningAlgorithm.WINDOW){
+			numWindows=computeNumWindows(sampleRateDivider); 
+			windowsLenght=(int) (SAMPLE_RATE/sampleRateDivider); 
+		}
+		else{
+			numWindows=1; 
+			windowsLenght=CleaningAlgorithm.amplitudeReady.get(0).length; 
+		}
 		Integer lastWindowLenght=0;
 		ArrayList<float[][]> tracks;
 		Ranking[][] rank;
@@ -292,6 +311,7 @@ public class AlgorithmWindows {
 		*/
 		/* Warning: mergingWindows deletes combinedTrack at the end! */
 		WaveManipulation.amplitudeNormalization(combinedTrack);
+		//WaveManipulation.normalization0dbwithMem(combinedTrack);
 		combinedWithoutWindows=mergingWindows(combinedTrack);
 		WaveManipulation.save(CleaningAlgorithm.name+"("+numWindows+").wav", WaveManipulation.convertFloatsToDoubles(combinedWithoutWindows));
 		Wave toRender=new Wave(CleaningAlgorithm.name+"("+numWindows+").wav");

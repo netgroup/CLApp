@@ -188,10 +188,14 @@ public class Statistical {
 		
 		for(i=0,j=0;i<f1.length && j<f2.length;i++,j++){
 			sum=f1[i]-f2[j];
-			result+=Math.pow(sum, 2);
+			if(!Double.isNaN(sum))
+				result+=Math.pow(sum, 2);
 		}
-		result/=i<j ? i : j;
-		result=Math.sqrt(result);
+		if(!Double.isNaN(result)){
+			result/=i<j ? i : j;
+			result=Math.sqrt(result);
+		}
+		
 		return result;
 	}
 	
@@ -203,11 +207,14 @@ public class Statistical {
 			for(i=0,j=0;i<f1[z].length && j<f2[s].length;i++,j++){
 				sum=f1[z][i]-f2[s][j];
 				tot++;
-				result+=Math.pow(sum, 2);
+				if(!Double.isNaN(sum))
+					result+=Math.pow(sum, 2);
 			}
 		}
-		result/=tot;
-		result=Math.sqrt(result);
+		if(!Double.isNaN(result)){
+			result/=tot;
+			result=Math.sqrt(result);
+		}
 		return result;
 	}
 }
