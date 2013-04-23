@@ -1,18 +1,11 @@
-package AudioCleaning;
+package com.audioclean;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
+import com.audioclean.tools.SortingTools;
+import com.audioclean.tools.Statistical;
 
 public class WaveManipulation {
 
 	public static final int SAMPLE_RATE = 44100;
-	private static final double MAX_16_BIT = Short.MAX_VALUE;     // 32,767
-	
 	public static double[] convertFloatsToDoubles(float[] input)
 	{
 	    if (input == null)
@@ -28,6 +21,7 @@ public class WaveManipulation {
 	}
 
 	/* converting array from short to double */
+	/*
 	public static void getNormalizedAmplitudes(int waveHeader) {
 		boolean signed=true; 
 		// usually 8bit is unsigned
@@ -40,18 +34,18 @@ public class WaveManipulation {
 		if (!signed){	// one more bit for unsigned value
 			maxAmplitude<<=1;
 		}
-		/* normalizedAmplitudes: tracks type float */
+		
 		CleaningAlgorithm.normalizedAmplitudes.add(new float[numSamples]);
 		for (int i = 0; i < numSamples; i++) {
 			CleaningAlgorithm.normalizedAmplitudes.get(CleaningAlgorithm.normalizedAmplitudes.size()-1)[i] = (float) CleaningAlgorithm.amplitude[i] / maxAmplitude;
 		}
-	}
+	}*/
 
 	/**
 	 * Save the double array as a sound file (using .wav or .au format).
 	 * Fonte: http://introcs.cs.princeton.edu/java/stdlib/StdAudio.java.html
 	 */
-	public static void save(String filename, double[] input) {
+	/*public static void save(String filename, double[] input) {
 	
 	    // assumes 44,100 samples per second
 	    // use 16-bit audio, mono, signed PCM, little Endian
@@ -82,7 +76,7 @@ public class WaveManipulation {
 	        System.exit(1);
 	    }
 	}
-	
+	*/
 	public static void amplitudeNormalization(float[][] f){
 		float alpha=(float)0.7;
 		double amplitudeN=0.0, amplitudeP=0.0, pwravgW=0.0;
@@ -99,6 +93,7 @@ public class WaveManipulation {
 	}
 	
 	//TODO insert those function and test it!
+	@SuppressWarnings("unused")
 	private static float alphaValue(int length){
 		for(int i=5;i>0;i--){
 			if(length>Math.pow(10, i)){
@@ -144,6 +139,44 @@ public class WaveManipulation {
 				i--;
 			}
 		}
+	}
+
+	public static int computeNumWindows(short[] tr, double n, int byteRate){
+		if(tr.length%(byteRate/n)==0)
+			return (int) ((int) tr.length/(byteRate/n));
+		else
+			return (int) (tr.length/(byteRate/n))+1;
+	}
+
+	public static short[][] windowsCreation(short[] tr,int NumWindows, int windowsLenght){
+		int leftovers = tr.length;
+		int index=0;
+		short[][] insert=new short[NumWindows][];
+		
+		
+		index=0;
+		leftovers = tr.length;
+		insert=new short[NumWindows][];
+		while(leftovers!=0){
+			if(index!=NumWindows-1){
+				insert[index]=new short[windowsLenght];
+				for(int i=0;i<windowsLenght;i++){
+					insert[index][i]=tr[index*windowsLenght+i];
+				}
+				index++;
+				leftovers-=windowsLenght;
+			}
+			else{
+				insert[index] = new short[leftovers];
+				for(int i=0;i<leftovers;i++){
+					insert[index][i]=tr[index*windowsLenght+i];
+				}
+				index++;
+				leftovers=0;
+			}
+		}
+		
+		return insert;
 	}
 
 }
