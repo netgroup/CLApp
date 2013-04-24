@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -25,7 +26,7 @@ public class regService extends Service{
 		super.onStartCommand(intent, flags, startId);
 		Log.i("reg", "Service started");
 		String take=intent.getStringExtra("fileName");
-		fileName=new String("/sdcard/"+take+".wav");
+		fileName=new String(Environment.getExternalStorageDirectory().getPath()+"/"+take+".wav");
 		//i.putExtra("fileName", fileName);
 		try {
 			startRegistration();

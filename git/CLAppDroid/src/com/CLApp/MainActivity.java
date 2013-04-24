@@ -51,7 +51,7 @@ public class MainActivity extends Activity {
 			loading.setVisibility(View.GONE);
 			stopService(intentRec);
 			intBcast=new Intent(this,BroadcastSender.class);
-			intBcast.putExtra("filename", Environment.getExternalStorageDirectory().getPath()+name+".wav");
+			intBcast.putExtra("fileName", Environment.getExternalStorageDirectory().getPath()+"/"+name+".wav");
 			Log.i("reg", "starting broadcasting");
 			startService(intBcast);
 		}
@@ -61,8 +61,11 @@ public class MainActivity extends Activity {
 			if(name.compareTo("")!=0)
 				intentRec.putExtra("fileName", name);
 			
-			else
+			else{
+				name="no_name";
 				intentRec.putExtra("fileName", "no_name");
+			}
+				
 			start=true;
 			loading.setVisibility(View.VISIBLE);
 			startService(intentRec);

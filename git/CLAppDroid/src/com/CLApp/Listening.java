@@ -28,8 +28,8 @@ import android.widget.Toast;
 
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class Listening extends AsyncTask<Context, Void, Void> {
-	private static DatagramSocket sock;
-	private static WaveHeader wh;
+	private DatagramSocket sock;
+	private WaveHeader wh;
 	HashMap<InetAddress,ArrayList<Integer>> chunkVerify;
 	HashMap<InetAddress,ArrayList<byte[]>> chunk;
 	HashMap<InetAddress,WaveHeader> waveHeaders;
@@ -222,14 +222,15 @@ public class Listening extends AsyncTask<Context, Void, Void> {
 		waveHeaders=new HashMap<InetAddress,WaveHeader>();
 		totalTrack=new HashMap<InetAddress,byte[]>();
 		
-		String waveHeadS=new String();
-		int port = 10000, m=0;
+		String waveHeadS;
+		int port=10000;
 		byte[] buck=new byte[1000];
 		byte[] real;
 		Packet pkt;
 		sock=null;
 		try{
 			sock=new DatagramSocket(port);
+			sock.setReuseAddress(true);
 			DatagramPacket pk=new DatagramPacket(buck,buck.length);
 			while(true){
 				sock.receive(pk);
@@ -270,6 +271,10 @@ public class Listening extends AsyncTask<Context, Void, Void> {
 			}
 		}catch(InterruptedIOException e){
 			sendForSave();
+		}catch(SocketException e){
+			Log.e("Server", "Error in socket bcast");
+			//System.err.println("Error in socket broadcast");
+			System.exit(1);
 		}catch(IOException e){
 			Log.e("Server", "Error in socket bcast");
 			//System.err.println("Error in socket broadcast");
