@@ -1,5 +1,7 @@
 package com.CLApp;
 
+import java.util.concurrent.ArrayBlockingQueue;
+
 import com.example.CLAppDroid.R;
 
 import android.os.AsyncTask;
@@ -22,14 +24,16 @@ public class MainActivity extends Activity {
 	private ThreadReceive tr;
 	private Listening at;
 	private String name;
+	private ArrayBlockingQueue<Byte> pipeRX;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		pipeRX=new ArrayBlockingQueue<Byte>(1000);
 		intentRec=new Intent(this,regService.class);
 		start=false;
-		at=new Listening();
-		at.execute(this);
+		at=new Listening(this.getApplicationContext());
+		at.execute(pipeRX);
 		//intentBcast=new Intent(this,ServerRec.class);
 		//Context ctx=this;
 		//tr=new ThreadReceive(ctx,intentBcast);

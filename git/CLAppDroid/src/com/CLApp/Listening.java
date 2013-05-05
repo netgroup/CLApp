@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import com.musicg.wave.Wave;
 import com.musicg.wave.WaveFileManager;
@@ -27,15 +28,20 @@ import android.util.Log;
 import android.widget.Toast;
 
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-public class Listening extends AsyncTask<Context, Void, Void> {
+public class Listening extends AsyncTask<ArrayBlockingQueue<Byte>, Void, Void> {
 	private DatagramSocket sock;
 	private WaveHeader wh;
 	HashMap<InetAddress,ArrayList<Integer>> chunkVerify;
 	HashMap<InetAddress,ArrayList<byte[]>> chunk;
 	HashMap<InetAddress,WaveHeader> waveHeaders;
 	HashMap<InetAddress, byte[]> totalTrack;
-	private static Context ctx;
+	private Context ctx;
+	private boolean done=false;
 	//private Intent intent;
+	
+	Listening(Context ctx){
+		this.ctx=ctx;
+	}
 
 	public static String getBroadcast() throws SocketException {
 	    System.setProperty("java.net.preferIPv4Stack", "true");
@@ -101,10 +107,14 @@ public class Listening extends AsyncTask<Context, Void, Void> {
 	}
 	
 	protected void onProgressUpdate(Void... progress) {
-		String str=new String("File received");
-		int dur=Toast.LENGTH_SHORT;
-		Toast ts=Toast.makeText(ctx, str, dur);
+		String str="File received";
+		Toast ts=new Toast(ctx);
+		ts.setText(str);
 		ts.show();
+		return;
+	}
+	protected void onPostExecute(Void... returns){
+		
 	}
 	/*
 	@Override
@@ -175,7 +185,7 @@ public class Listening extends AsyncTask<Context, Void, Void> {
 	*/
 	
 	@Override
-	protected Void doInBackground(Context... params) {
+	protected Void doInBackground(ArrayBlockingQueue<Byte>... params) {
 		server();
 		publishProgress((Void)null);
 		return null;
@@ -232,13 +242,13 @@ public class Listening extends AsyncTask<Context, Void, Void> {
 			sock=new DatagramSocket(port);
 			sock.setReuseAddress(true);
 			DatagramPacket pk=new DatagramPacket(buck,buck.length);
-			while(true){
+			while(!done){
 				sock.receive(pk);
 				sock.setSoTimeout(1000);
 				if(mine(pk.getAddress())){
 					continue;
 				}
-				if(pk.getData()!=null){
+				if(!(new String((byte[])pk.getData())).equals("")){
 					real=Packet.recvTerminated(pk.getData());
 					pkt=Packet.recoverData(real);
 					if(!pkt.testCrc())
@@ -294,6 +304,10 @@ public class Listening extends AsyncTask<Context, Void, Void> {
 				wfm.saveWaveAsFile("receiveFrom"+ksa[i].toString()+".wav");
 			}
 		}
+	}
+	
+	public void stopIt(){
+		done=true;
 	}
 
 }

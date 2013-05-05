@@ -9,6 +9,8 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.concurrent.ArrayBlockingQueue;
+
 import com.audioclean.WaveManipulation;
 import com.musicg.wave.Wave;
 import com.musicg.wave.WaveHeader;
@@ -17,6 +19,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -24,11 +27,12 @@ import android.util.Log;
 
 @SuppressLint("NewApi")
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-public class BroadcastSender extends Service{
+public class BroadcastSenderStream extends AsyncTask<ArrayBlockingQueue<Byte>,Void,Void>{
 	
 	//private File file;
 	private String fileName;
 	private WaveHeader wh;
+	private boolean done=false;
 	//public Intent intent;
 	
 	/*public String getLocalIpAddress() {
@@ -61,33 +65,31 @@ public class BroadcastSender extends Service{
 	    return null;
 	}
 	
-	public void sendChunk(DatagramSocket sock, InetAddress addr, int port, short[] chunk) throws IOException, InterruptedException{
+	public void sendChunk(DatagramSocket sock, InetAddress addr, int port, ArrayBlockingQueue<Byte> pipe) throws IOException, InterruptedException{
 		DatagramPacket pack;
 		//sock.joinGroup(addr);
 		
-		int size=chunk.length, index=0;
+		int size=1000;
 		byte[] array;
 		//String sizeInWord=Integer.toString(size);
-		String waveHeadS=wh.toString();
-		Packet toSend=new Packet(waveHeadS.getBytes(),true);
-		toSend.computeCrc();
+		//String waveHeadS=wh.toString();
+		Packet toSend;//=new Packet(waveHeadS.getBytes(),true)
+		/*toSend.computeCrc();
 		toSend.makePack();
 		array=new byte[512];
-		byte[] temp=Packet.terminate(toSend.getOverall());
-		pack=new DatagramPacket(temp,temp.length,addr,port);
-		sock.send(pack);
+		*/byte[] temp;//=Packet.terminate(toSend.getOverall())
+		/*pack=new DatagramPacket(temp,temp.length,addr,port);
+		sock.send(pack);*/
 		//Thread.sleep(1000);
 		//pack=new DatagramPacket((waveHeadS).getBytes(),(waveHeadS).getBytes().length,addr,port);
 		//sock.send(pack);
 		//Thread.sleep(1000);
 		
-		byte[] ret;
+		array=new byte[size];
 		int indexC=1;
-		while(index<size){
-			for(int i=index,j=0;i<(index+512/2)&&i<size&&j<array.length;i++, j=j+2){
-				ret=ExtAudioRecorder.getBytes(chunk[i]);
-				array[j]=ret[0];
-				array[j+1]=ret[1];
+		while(!done){
+			for(int i=0;i<size;i++){
+				array[i]=pipe.take();
 			}
 			toSend=new Packet(array,indexC);
 			toSend.computeCrc();
@@ -97,26 +99,22 @@ public class BroadcastSender extends Service{
 			//Thread.sleep(100);
 			sock.send(pack);
 			Log.i("bcast", "packet send");
-			index+=512/2;
 		}
-		String term="";
+		/*String term="";
 		temp=term.getBytes();
 		pack=new DatagramPacket(temp,0,addr,port);
 		sock.send(pack);
+		*/
 	}
 	
-	public void sending() throws IOException, InterruptedException{
+	public void sending(ArrayBlockingQueue<Byte> pipe) throws IOException, InterruptedException{
 		DatagramSocket sock=new DatagramSocket();
-		File file=new File(fileName);
-		short[][] tr=clusteringTrack(file);
-		//String address = getBroadcast();
 		InetAddress addr=InetAddress.getByName(getBroadcast());
 		sock.setBroadcast(true);
 		int port = 10000;
-		sendChunk(sock,addr,port,tr[tr.length-1]);
+		sendChunk(sock,addr,port,pipe);
 		//sock.leaveGroup(addr);
 		sock.close();
-		this.stopSelf();
 	}/*
 	public void sending() throws IOException, InterruptedException{
 		DatagramSocket sock=new DatagramSocket();
@@ -175,32 +173,23 @@ public class BroadcastSender extends Service{
 		return WaveManipulation.windowsCreation(noWin, numWin, winLen);
 	}
 
-	public int onStartCommand(Intent i,int flags, int startId){
-		super.onStartCommand(i,flags,startId);
-		fileName=i.getStringExtra("fileName");
-		Log.i("bcast","starting send service");
+	@Override
+	protected Void doInBackground(ArrayBlockingQueue<Byte>... arg0) {
+		ArrayBlockingQueue<Byte> pipe=arg0[0];
 		try {
-			sending(); 
+			sending(pipe);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		catch (InterruptedException e) {
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return START_STICKY;
+		return null;
 	}
 	
-	public void onCreate(){
-		super.onCreate();
-		Log.i("bcast","creating send service");
-	}
-
-	@Override
-	public IBinder onBind(Intent intent) {
-		// TODO Auto-generated method stub
-		return null;
+	public void stopIt(){
+		done=true;
 	}
 
 }
