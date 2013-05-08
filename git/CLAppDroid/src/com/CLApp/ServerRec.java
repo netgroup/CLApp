@@ -220,26 +220,26 @@ public class ServerRec extends Service{
 				sock.receive(pk);
 				sock.setSoTimeout(1000);
 				if(pk.getData()!=null){
-					real=Packet.recvTerminated(pk.getData());
-					pkt=Packet.recoverData(real);
-					if(!pkt.testCrc())
-						continue;
-					if(pkt.control){
-						if(chunkVerify.containsKey(pk.getAddress())){
+					//real=Packet.recvTerminated(pk.getData());
+					pkt=Packet.recoverData(pk.getData());
+					//if(!pkt.testCrc())
+						//continue;
+					//if(pkt.control){
+						/*if(chunkVerify.containsKey(pk.getAddress())){
 							chunkVerify.remove(pk.getAddress());
 							chunk.remove(pk.getAddress());
 							waveHeaders.remove(pk.getAddress());
-						}
+						}*/
 						waveHeadS=new String(pkt.getData());
 						wh=WaveHeader.parseString(waveHeadS);
 						chunkVerify.put(pk.getAddress(), new ArrayList<Integer>());
 						chunk.put(pk.getAddress(), new ArrayList<byte[]>());
 						waveHeaders.put(pk.getAddress(), wh);
-					}
-					else{
+					//}
+					//else{
 						chunkVerify.get(pk.getAddress()).add(Integer.parseInt(new String(pkt.index)));
 						chunk.get(pk.getAddress()).add(pkt.getData());
-					}
+					//}
 				}
 				else{
 					if(verifyCoerency(pk.getAddress())){

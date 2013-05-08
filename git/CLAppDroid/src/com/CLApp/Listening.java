@@ -33,7 +33,7 @@ public class Listening extends AsyncTask<ArrayBlockingQueue<Byte>, Void, Void> {
 	private WaveHeader wh;
 	HashMap<InetAddress,ArrayList<Integer>> chunkVerify;
 	HashMap<InetAddress,ArrayList<byte[]>> chunk;
-	HashMap<InetAddress,WaveHeader> waveHeaders;
+	//HashMap<InetAddress,WaveHeader> waveHeaders;
 	HashMap<InetAddress, byte[]> totalTrack;
 	private Context ctx;
 	private boolean done=false;
@@ -229,7 +229,7 @@ public class Listening extends AsyncTask<ArrayBlockingQueue<Byte>, Void, Void> {
 	public void server(){
 		chunkVerify=new HashMap<InetAddress, ArrayList<Integer>>();
 		chunk=new HashMap<InetAddress, ArrayList<byte[]>>();
-		waveHeaders=new HashMap<InetAddress,WaveHeader>();
+		//waveHeaders=new HashMap<InetAddress,WaveHeader>();
 		totalTrack=new HashMap<InetAddress,byte[]>();
 		
 		String waveHeadS;
@@ -244,32 +244,38 @@ public class Listening extends AsyncTask<ArrayBlockingQueue<Byte>, Void, Void> {
 			DatagramPacket pk=new DatagramPacket(buck,buck.length);
 			while(!done){
 				sock.receive(pk);
-				sock.setSoTimeout(1000);
+				//sock.setSoTimeout(1000);
 				if(mine(pk.getAddress())){
 					continue;
 				}
 				if(!(new String((byte[])pk.getData())).equals("")){
-					real=Packet.recvTerminated(pk.getData());
-					pkt=Packet.recoverData(real);
-					if(!pkt.testCrc())
-						continue;
-					if(pkt.control){
-						if(chunkVerify.containsKey(pk.getAddress())){
-							chunkVerify.remove(pk.getAddress());
+					//real=Packet.recvTerminated(pk.getData());
+					pkt=Packet.recoverData(pk.getData());
+					//if(!pkt.testCrc())
+					//	continue;
+					//if(pkt.control){
+						if(!chunkVerify.containsKey(pk.getAddress())){
+							/*chunkVerify.remove(pk.getAddress());
 							chunk.remove(pk.getAddress());
 							waveHeaders.remove(pk.getAddress());
+							*/
+							chunkVerify.put(pk.getAddress(), new ArrayList<Integer>());
+							chunk.put(pk.getAddress(), new ArrayList<byte[]>());
 						}
+						
 						waveHeadS=new String(pkt.getData());
 						wh=WaveHeader.parseString(waveHeadS);
-						chunkVerify.put(pk.getAddress(), new ArrayList<Integer>());
-						chunk.put(pk.getAddress(), new ArrayList<byte[]>());
-						waveHeaders.put(pk.getAddress(), wh);
-					}
-					else{
+						
+						
+						//waveHeaders.put(pk.getAddress(), wh);
 						chunkVerify.get(pk.getAddress()).add(Integer.parseInt(new String(pkt.index)));
 						chunk.get(pk.getAddress()).add(pkt.getData());
 					}
-				}
+					/*else{
+						chunkVerify.get(pk.getAddress()).add(Integer.parseInt(new String(pkt.index)));
+						chunk.get(pk.getAddress()).add(pkt.getData());
+					}*/
+				//}
 				else{
 					if(verifyCoerency(pk.getAddress())){
 						byte[] total=reformPack(chunk.get(pk.getAddress()),chunkVerify.get(pk.getAddress()));
@@ -298,11 +304,11 @@ public class Listening extends AsyncTask<ArrayBlockingQueue<Byte>, Void, Void> {
 		Set<InetAddress> ks=totalTrack.keySet();
 		InetAddress[] ksa=(InetAddress[]) ks.toArray();
 		for(int i=0;i<ksa.length;i++){
-			if(waveHeaders.containsKey(ksa[i])){
+			/*if(waveHeaders.containsKey(ksa[i])){
 				toSave=new Wave(waveHeaders.get(ksa[i]),totalTrack.get(ksa[i]));
 				wfm=new WaveFileManager(toSave);
 				wfm.saveWaveAsFile("receiveFrom"+ksa[i].toString()+".wav");
-			}
+			}*/
 		}
 	}
 	

@@ -1,6 +1,5 @@
 package com.CLApp;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -11,46 +10,26 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import com.audioclean.WaveManipulation;
-import com.musicg.wave.Wave;
-import com.musicg.wave.WaveHeader;
-
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Service;
-import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Build;
-import android.os.IBinder;
 import android.util.Log;
 
 
 @SuppressLint("NewApi")
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-public class BroadcastSenderStream extends AsyncTask<ArrayBlockingQueue<Byte>,Void,Void>{
+public class BroadcastSenderStream extends Thread{
 	
-	//private File file;
-	private String fileName;
-	private WaveHeader wh;
+	private ArrayBlockingQueue<Byte> pipe;
 	private boolean done=false;
-	//public Intent intent;
 	
-	/*public String getLocalIpAddress() {
-	    try {
-	        for (Enumeration<NetworkInterface> en = NetworkInterface
-	                .getNetworkInterfaces(); en.hasMoreElements();) {
-	            NetworkInterface intf = en.nextElement();
-	            for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-	                InetAddress inetAddress = enumIpAddr.nextElement();
-	                if (!inetAddress.isLoopbackAddress()) {
-	                    return inetAddress.getHostAddress().toString();
-	                }
-	            }
-	        }
-	    } catch (SocketException ex) {}
-	    return null;
+	//Constructor. "pipe" attribute is used to pass the pipe to receive data to send
+	BroadcastSenderStream(ArrayBlockingQueue<Byte> pipe){
+		this.pipe=pipe;
+		done=false;
 	}
-	*/
+	
+	//For the explanation of that function, we remand you to the ListenStream class
 	public static String getBroadcast() throws SocketException {
 	    System.setProperty("java.net.preferIPv4Stack", "true");
 	    for (Enumeration<NetworkInterface> niEnum = NetworkInterface.getNetworkInterfaces(); niEnum.hasMoreElements();) {
@@ -65,119 +44,48 @@ public class BroadcastSenderStream extends AsyncTask<ArrayBlockingQueue<Byte>,Vo
 	    return null;
 	}
 	
-	public void sendChunk(DatagramSocket sock, InetAddress addr, int port, ArrayBlockingQueue<Byte> pipe) throws IOException, InterruptedException{
+	//This function is the primary function. It acts like server
+	//and send chunks received from the pipe
+	public void sendChunk(DatagramSocket sock, InetAddress addr, int port) throws IOException, InterruptedException{
 		DatagramPacket pack;
-		//sock.joinGroup(addr);
 		
+		//The size of the chunks is set to 1000 (Note: it is the size of only the data part)
 		int size=1000;
 		byte[] array;
-		//String sizeInWord=Integer.toString(size);
-		//String waveHeadS=wh.toString();
 		Packet toSend;//=new Packet(waveHeadS.getBytes(),true)
-		/*toSend.computeCrc();
-		toSend.makePack();
-		array=new byte[512];
-		*/byte[] temp;//=Packet.terminate(toSend.getOverall())
-		/*pack=new DatagramPacket(temp,temp.length,addr,port);
-		sock.send(pack);*/
-		//Thread.sleep(1000);
-		//pack=new DatagramPacket((waveHeadS).getBytes(),(waveHeadS).getBytes().length,addr,port);
-		//sock.send(pack);
-		//Thread.sleep(1000);
+		byte[] temp;//=Packet.terminate(toSend.getOverall())
 		
 		array=new byte[size];
 		int indexC=1;
+		//While loop stopped only when stopIt is called
 		while(!done){
 			for(int i=0;i<size;i++){
 				array[i]=pipe.take();
 			}
 			toSend=new Packet(array,indexC);
-			toSend.computeCrc();
 			toSend.makePack();
 			temp=Packet.terminate(toSend.getOverall());
 			pack=new DatagramPacket(temp,temp.length,addr,port);
-			//Thread.sleep(100);
 			sock.send(pack);
 			Log.i("bcast", "packet send");
 		}
-		/*String term="";
-		temp=term.getBytes();
-		pack=new DatagramPacket(temp,0,addr,port);
-		sock.send(pack);
-		*/
 	}
 	
-	public void sending(ArrayBlockingQueue<Byte> pipe) throws IOException, InterruptedException{
-		DatagramSocket sock=new DatagramSocket();
-		InetAddress addr=InetAddress.getByName(getBroadcast());
-		sock.setBroadcast(true);
-		int port = 10000;
-		sendChunk(sock,addr,port,pipe);
-		//sock.leaveGroup(addr);
-		sock.close();
-	}/*
+	//Sending setup all the elements for the sending and then call the sendChunks function to
+	//really send data
 	public void sending() throws IOException, InterruptedException{
 		DatagramSocket sock=new DatagramSocket();
-		
-		//String address = getBroadcast();
 		InetAddress addr=InetAddress.getByName(getBroadcast());
 		sock.setBroadcast(true);
 		int port = 10000;
-		DatagramPacket pack;
-		//sock.joinGroup(addr);
-		
-		long size=file.length(), index=0;
-		FileInputStream fs=new FileInputStream(file);
-		byte[] array=new byte[512];
-		String sizeInWord=Integer.toString((int) size);
-		/*if(size%512!=0){
-			int multiplier=(int) (size/512);
-			int remain=(int) (size-multiplier*512);
-			sizeInWord+=" "+remain+".";
-		}
-		else{
-			sizeInWord+=" 0.";
-		}
-		sizeInWord+=".";
-		pack=new DatagramPacket((sizeInWord).getBytes("ASCII"),(sizeInWord).getBytes("ASCII").length,addr,port);
-		sock.send(pack);
-		ArrayList<ThreadSend> sender=new ArrayList<ThreadSend>();
-		sock.setSoTimeout(10000);
-		try{
-			while(true){
-				sock.receive(pack);
-				InetAddress active=pack.getAddress();
-				ThreadSend th= new ThreadSend(active,file);
-				sender.add(th);
-			}
-		}catch(SocketTimeoutException e){}
-		int n=0;
-		while(n<sender.size()){
-			sender.get(n).start();
-			n++;
-		}
-		n=0;
-		while(n<sender.size()){
-			sender.get(n).join();
-		}
-	}*/
-	
-	public short[][] clusteringTrack(File f){
-		Wave wav=new Wave(f.getAbsolutePath());
-		WaveHeader head=wav.getWaveHeader();
-		wh=head;
-		int sampleRate=head.getSampleRate();
-		short[] noWin=wav.getSampleAmplitudes();
-		int numWin=WaveManipulation.computeNumWindows(noWin, 1.0, sampleRate);
-		int winLen=sampleRate/1;
-		return WaveManipulation.windowsCreation(noWin, numWin, winLen);
+		sendChunk(sock,addr,port);
+		sock.close();
 	}
-
-	@Override
-	protected Void doInBackground(ArrayBlockingQueue<Byte>... arg0) {
-		ArrayBlockingQueue<Byte> pipe=arg0[0];
+	
+	//run function of the thread. It only calls the sending function
+	public void run() {
 		try {
-			sending(pipe);
+			sending();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -185,9 +93,9 @@ public class BroadcastSenderStream extends AsyncTask<ArrayBlockingQueue<Byte>,Vo
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
 	}
 	
+	//Function called to stop the while(true) loop
 	public void stopIt(){
 		done=true;
 	}

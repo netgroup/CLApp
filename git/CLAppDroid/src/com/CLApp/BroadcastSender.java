@@ -69,13 +69,13 @@ public class BroadcastSender extends Service{
 		byte[] array;
 		//String sizeInWord=Integer.toString(size);
 		String waveHeadS=wh.toString();
-		Packet toSend=new Packet(waveHeadS.getBytes(),true);
-		toSend.computeCrc();
-		toSend.makePack();
+		//Packet toSend=new Packet(waveHeadS.getBytes(),true);
+		//toSend.computeCrc();
+		//toSend.makePack();
 		array=new byte[512];
-		byte[] temp=Packet.terminate(toSend.getOverall());
-		pack=new DatagramPacket(temp,temp.length,addr,port);
-		sock.send(pack);
+		//byte[] temp=Packet.terminate(toSend.getOverall());
+		//pack=new DatagramPacket(temp,temp.length,addr,port);
+		//sock.send(pack);
 		//Thread.sleep(1000);
 		//pack=new DatagramPacket((waveHeadS).getBytes(),(waveHeadS).getBytes().length,addr,port);
 		//sock.send(pack);
@@ -89,20 +89,20 @@ public class BroadcastSender extends Service{
 				array[j]=ret[0];
 				array[j+1]=ret[1];
 			}
-			toSend=new Packet(array,indexC);
-			toSend.computeCrc();
-			toSend.makePack();
-			temp=Packet.terminate(toSend.getOverall());
-			pack=new DatagramPacket(temp,temp.length,addr,port);
+			//toSend=new Packet(array,indexC);
+			//toSend.computeCrc();
+			//toSend.makePack();
+			//temp=Packet.terminate(toSend.getOverall());
+			//pack=new DatagramPacket(temp,temp.length,addr,port);
 			//Thread.sleep(100);
-			sock.send(pack);
+			//sock.send(pack);
 			Log.i("bcast", "packet send");
 			index+=512/2;
 		}
 		String term="";
-		temp=term.getBytes();
-		pack=new DatagramPacket(temp,0,addr,port);
-		sock.send(pack);
+		//temp=term.getBytes();
+		//pack=new DatagramPacket(temp,0,addr,port);
+		//sock.send(pack);
 	}
 	
 	public void sending() throws IOException, InterruptedException{

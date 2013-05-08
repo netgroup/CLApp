@@ -1,52 +1,60 @@
 package com.CLApp;
 
-import java.util.zip.CRC32;
-
+//Class used to standardize the packet structure
 public class Packet {
+	//bytes array of data
 	byte[] data;
-	byte[] crc;
+	//byte[] crc;
+	//bytes array containing the index of the chunk
 	byte[] index;
+	//ensemble of index and data separated by a dot
 	byte[] overall;
-	boolean control=false;
+	//boolean control=false;
 	
+	//Constructor: it takes the array of data and the chunk number
 	Packet(byte[] d, int ind){
 		data=d;
+		//The index of type int is converted to String
 		String str=Integer.toString(ind);
 		index=str.getBytes();
 	}
 	
+	//Static function to return an object Packet from the string of byte 
+	//received on the net
 	public static Packet recoverData(byte[] b){
 		//overall=b;
+		//Boolean for functions of control
 		boolean indexRead=false, dataRead=false;
-		byte[] data = null, crc;
+		byte[] data = null; //crc;
 		int index = 0;
 		String str=new String();
 		String ch;
+		//The bytes array is parsed to remove the divisor dot
 		for(int i=0;i<b.length;i++){
 			ch=new String(b,i,1);
 			if(ch.compareTo(".")==0){
+				//The index is identified and memorized
 				if(!indexRead){
 					index=Integer.parseInt(str);
 				}
 				else if(!dataRead){
 					data=str.getBytes();
+					i=b.length;
 				}
 				str=new String();
 			}
 			else
 				str+=ch;
 		}
-		crc=str.getBytes();
+		//crc=str.getBytes();
+		//The packet to return is declared and returned
 		Packet p=new Packet(data,index);
-		p.crc=crc;
+		//p.crc=crc;
 		p.overall=b;
-		if(p.index.equals((Integer.toString(index)).getBytes())){
-			p.control=true;
-		}
 		return p;
 	}
 	
-	public Packet(byte[] data, boolean ctrl){
+	/*public Packet(byte[] data, boolean ctrl){
 		this.data=data;
 		control=ctrl;
 		if(ctrl){
@@ -62,12 +70,13 @@ public class Packet {
 		long numCrc=com.getValue();
 		String strCrc=Long.toString(numCrc);
 		crc=strCrc.getBytes();
-	}
+	}*/
 	
+	//Function to setup the overall array with the separator
 	public void makePack(){
 		byte[] point=".".getBytes();
 		int j=0;
-		overall=new byte[index.length+data.length+crc.length+2*point.length];
+		overall=new byte[index.length+data.length+1*point.length];
 		int i=0;
 		for(i=0;i<index.length;i++){
 			overall[i]=index[i];
@@ -80,6 +89,7 @@ public class Packet {
 		for(;i<(data.length+j);i++){
 			overall[i]=data[i-j];
 		}
+		/*
 		i=j=index.length+data.length+point.length;
 		for(;i<(j+point.length);i++){
 			overall[i]=point[i-j];
@@ -87,9 +97,9 @@ public class Packet {
 		i=index.length+data.length+2*point.length;
 		for(;i<(j+crc.length);i++){
 			overall[i]=crc[i-j];
-		}
+		}*/
 	}
-	
+	/*
 	public boolean testCrc(){
 		CRC32 newCrc=new CRC32();
 		long oldCrcValue;
@@ -107,23 +117,30 @@ public class Packet {
 		else
 			return false;
 	}
+	*/
 	
+	//Return the index of the object packet 
 	public byte[] getIndex(){
 		return index;
 	}
 	
+	//return the data of the object packet
 	public byte[] getData(){
 		return data;
 	}
-	
+	/*
 	public byte[] getCrc(){
 		return crc;
 	}
+	*/
 	
+	//return the overall bytes array
 	public byte[] getOverall(){
 		return overall;
 	}
 	
+	//Function to set up the string of byte with a dot to be recognized
+	//by the server parser
 	public static byte[] terminate(byte[] data){
 		byte[] point=".".getBytes();
 		byte[] term=new byte[data.length+point.length];
@@ -138,6 +155,7 @@ public class Packet {
 		return term;
 	}
 	
+	//Function to recover the data from the string of bytes terminated by the dot
 	public static byte[] recvTerminated(byte[] data){
 		byte[] term = null;
 		boolean ctrl=false;
@@ -152,5 +170,5 @@ public class Packet {
 		}
 		return term;
 	}
-
+	
 }

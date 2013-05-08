@@ -80,7 +80,8 @@ public class ExtAudioRecorderForStream
 	
 	// File writer (only in uncompressed mode)
 	private RandomAccessFile headerFile;
-	public ArrayBlockingQueue<Byte> pipe;
+	public ArrayBlockingQueue<Byte> pipeTX;
+	public ArrayBlockingQueue<Byte> pipeIN;
 	
 	// Number of channels, sample rate, sample size(size in bits), buffer size, audio source, sample size(see AudioFormat)
 	private short                    nChannels;
@@ -125,7 +126,8 @@ public class ExtAudioRecorderForStream
 			try
 			{ 
 				for(int i=0;i<buffer.length;i++){
-					pipe.put(Byte.valueOf(buffer[i]));
+					pipeTX.put(Byte.valueOf(buffer[i]));
+					pipeIN.put(Byte.valueOf(buffer[i]));
 				}
 				//randomAccessWriter.write(buffer); // Write buffer to file
 				payloadSize += buffer.length;
@@ -162,6 +164,7 @@ public class ExtAudioRecorderForStream
 			// NOT USED
 		}
 	};
+	
 	/** 
 	 * 
 	 * 
@@ -464,9 +467,10 @@ public class ExtAudioRecorderForStream
 	 * Call after prepare().
 	 * 
 	 */
-	public void start(ArrayBlockingQueue<Byte> pipe)
+	public void start(ArrayBlockingQueue<Byte> pipeTX,ArrayBlockingQueue<Byte> pipeIN)
 	{
-		this.pipe=pipe;
+		this.pipeTX=pipeTX;
+		this.pipeIN=pipeIN;
 		if (state == State.READY)
 		{
 			if (rUncompressed)
