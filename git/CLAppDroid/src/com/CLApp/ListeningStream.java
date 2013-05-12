@@ -30,12 +30,15 @@ public class ListeningStream extends Thread {
 	//ArrayList to contain all the bytes sequence to send to the Cleaning Algorithm
 	ArrayList<byte[]> totalTrack;
 	//Boolean used to stop the while(true) sequence
-	private boolean done=false;
+	private static volatile boolean done;
+	//Name header file TODO maybe also output file
+	String fileName;
 	
 	//Constructor. It takes as attribute the pipe to receive data
-	ListeningStream(ArrayBlockingQueue<Byte> ar){
+	ListeningStream(ArrayBlockingQueue<Byte> ar, String name){
 		pipeIN=ar;
 		done=false;
+		fileName=name;
 	}
 	
 	//Function to get the broadcast address from our actual connection
@@ -78,7 +81,12 @@ public class ListeningStream extends Thread {
 	
 	//Run function of the thread. It only call the server function
 	public void run() {
-		server();
+		try {
+			server();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	//That function takes the Hashmap already declared and reforms the data sequence,
@@ -135,12 +143,13 @@ public class ListeningStream extends Thread {
 	}
 	
 	//Primary function of the thread
-	public void server(){
+	public void server() throws InterruptedException{
 		//Initialization of the hashmaps
+		CleanTask ct=new CleanTask(null,null);
 		chunkVerify=new HashMap<InetAddress, ArrayList<Integer>>();
 		chunk=new HashMap<InetAddress, ArrayList<byte[]>>();
 		totalTrack=new ArrayList<byte[]>();
-		InetAddress[] keys;
+		InetAddress[] keys = null;
 		
 		//Socket in listen to the port 10000
 		int port=10000;
@@ -161,13 +170,13 @@ public class ListeningStream extends Thread {
 			//this is used to decide when the sequences could be sent to the cleaning Algorithm
 			long time=System.nanoTime();
 			//That while can be stopped with the use of the function stopIt
-			while(!done){
+			while(!this.isInterrupted()){
 				//True if from the memorization of time a second has elapsed
-				if(System.nanoTime()-time>1000000000){
-					keys=(InetAddress[]) chunk.keySet().toArray();
+				if(System.nanoTime()-time>100000000){
+					//chunk.keySet().toArray(keys);
 					//all the bytes sequence from the different IPs are reordered and finalized
-					for(int i=0;i<keys.length;i++){
-						totalTrack.add(reformPack(chunk.get(keys[i]),chunkVerify.get(keys[i])));
+					for(InetAddress tmp : chunk.keySet()){
+						totalTrack.add(reformPack(chunk.get(tmp),chunkVerify.get(tmp)));
 					}
 					//The datas in the internal pipe are took to be added with the other in the arraylist 
 					internal=pipeIN.toArray(new Byte[pipeIN.size()]);
@@ -178,36 +187,47 @@ public class ListeningStream extends Thread {
 					}
 					totalTrack.add(internalConv);
 					//TODO insert a call to the AsyncTask of the cleaning algorithm
+					if(ct.isAlive()){
+						ct.join();
+					}
+					ct=new CleanTask(totalTrack,fileName);
+					ct.run();
 					chunkVerify=new HashMap<InetAddress, ArrayList<Integer>>();
 					chunk=new HashMap<InetAddress, ArrayList<byte[]>>();
 					time=System.nanoTime();
+					totalTrack=new ArrayList<byte[]>();
 				}
 				else{
 					//a new packet is received from the socket in listen
 					sock.receive(pk);
 					//if the packet is mine (from my own address) it is tossed
-					if(mine(pk.getAddress())){
-						continue;
+					if(!mine(pk.getAddress())){
+						//The dot is removed from the end of the string of byte end a packet is created
+						real=Packet.recvTerminated(pk.getData());
+						pkt=Packet.recoverData(real);
+						//If the sender IP isn't already known, it is inserted in the Hashmaps as new key
+						if(!chunkVerify.containsKey(pk.getAddress())){
+							chunkVerify.put(pk.getAddress(), new ArrayList<Integer>());
+							chunk.put(pk.getAddress(), new ArrayList<byte[]>());
+						}
+						chunkVerify.get(pk.getAddress()).add(Integer.parseInt(new String(pkt.index)));
+						chunk.get(pk.getAddress()).add(pkt.getData());
 					}
-					//The dot is removed from the end of the string of byte end a packet is created
-					real=Packet.recvTerminated(pk.getData());
-					pkt=Packet.recoverData(real);
-					//If the sender IP isn't already known, it is inserted in the Hashmaps as new key
-					if(!chunkVerify.containsKey(pk.getAddress())){
-						chunkVerify.put(pk.getAddress(), new ArrayList<Integer>());
-						chunk.put(pk.getAddress(), new ArrayList<byte[]>());
-					}
-					chunkVerify.get(pk.getAddress()).add(Integer.parseInt(new String(pkt.index)));
-					chunk.get(pk.getAddress()).add(pkt.getData());
+					
 				}
 				//At the end of the loop, if there are others data in the Hashmaps and/or in the pipe
 				//those are sent to the cleaning algorithm
+			}
+			System.out.println("while(true) listen stopped");
+			if(!chunk.isEmpty()||!pipeIN.isEmpty()){
+				//TODO insert a way to determinate if there aren't new packet in the socket but there are in the pipe
 				if(!chunk.isEmpty()){
-					//TODO insert a way to determinate if there aren't new packet in the socket but there are in the pipe
 					keys=(InetAddress[]) chunk.keySet().toArray();
 					for(int i=0;i<keys.length;i++){
 						totalTrack.add(reformPack(chunk.get(keys[i]),chunkVerify.get(keys[i])));
 					}
+				}
+				if(!pipeIN.isEmpty()){
 					internal=pipeIN.toArray(new Byte[pipeIN.size()]);
 					pipeIN.clear();
 					internalConv=new byte[internal.length];
@@ -215,12 +235,18 @@ public class ListeningStream extends Thread {
 						internalConv[i]=internal[i].byteValue();
 					}
 					totalTrack.add(internalConv);
-					//TODO insert a call to the AsyncTask of the cleaning algorithm
-					chunkVerify=new HashMap<InetAddress, ArrayList<Integer>>();
-					chunk=new HashMap<InetAddress, ArrayList<byte[]>>();
 				}
-				//TODO insert a way to signal to the audiocleaning algorithm to save the file
+				//TODO insert a call to the AsyncTask of the cleaning algorithm
+				if(ct.isAlive()){
+					ct.join();
+				}
+				ct=new CleanTask(totalTrack,fileName);
+				ct.run();
+				ct.join();
+				chunkVerify=new HashMap<InetAddress, ArrayList<Integer>>();
+				chunk=new HashMap<InetAddress, ArrayList<byte[]>>();
 			}
+			//TODO insert a way to signal to the audiocleaning algorithm to save the file
 		}catch(InterruptedIOException e){
 			Log.e("Server", "Error in socket bcast");
 			System.exit(1);
@@ -234,7 +260,7 @@ public class ListeningStream extends Thread {
 	}
 	
 	//Function to stop the while(true) loop
-	public void stopIt(){
+	public static void stopIt(){
 		done=true;
 	}
 

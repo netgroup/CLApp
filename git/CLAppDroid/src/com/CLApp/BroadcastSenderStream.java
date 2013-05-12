@@ -21,7 +21,7 @@ import android.util.Log;
 public class BroadcastSenderStream extends Thread{
 	
 	private ArrayBlockingQueue<Byte> pipe;
-	private boolean done=false;
+	private static volatile boolean done;
 	
 	//Constructor. "pipe" attribute is used to pass the pipe to receive data to send
 	BroadcastSenderStream(ArrayBlockingQueue<Byte> pipe){
@@ -56,18 +56,34 @@ public class BroadcastSenderStream extends Thread{
 		byte[] temp;//=Packet.terminate(toSend.getOverall())
 		
 		array=new byte[size];
-		int indexC=1;
+		int indexC=1, iterator=0;
 		//While loop stopped only when stopIt is called
-		while(!done){
-			for(int i=0;i<size;i++){
-				array[i]=pipe.take();
+		while(!this.isInterrupted()){
+			try{
+				for(int i=0;i<size;i++){
+					array[i]=pipe.take();
+					iterator=i;
+				}
 			}
-			toSend=new Packet(array,indexC);
-			toSend.makePack();
-			temp=Packet.terminate(toSend.getOverall());
-			pack=new DatagramPacket(temp,temp.length,addr,port);
-			sock.send(pack);
-			Log.i("bcast", "packet send");
+			catch(InterruptedException e){
+				System.out.println("while(true) broadcast stopped");
+			}
+			finally{
+				byte[] tempArray;
+				if(iterator<size-1){
+					tempArray=new byte[iterator+1];
+					for(int i=0;i<tempArray.length;i++){
+						tempArray[i]=array[i];
+					}
+					array=tempArray;
+				}
+				toSend=new Packet(array,indexC);
+				toSend.makePack();
+				temp=Packet.terminate(toSend.getOverall());
+				pack=new DatagramPacket(temp,temp.length,addr,port);
+				sock.send(pack);
+				Log.i("bcast", "packet send");
+			}
 		}
 	}
 	
@@ -96,7 +112,7 @@ public class BroadcastSenderStream extends Thread{
 	}
 	
 	//Function called to stop the while(true) loop
-	public void stopIt(){
+	public static void stopIt(){
 		done=true;
 	}
 

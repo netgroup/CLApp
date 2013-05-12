@@ -21,7 +21,7 @@ public class WaveManipulation {
 	}
 
 	/* converting array from short to double */
-	/*
+	
 	public static void getNormalizedAmplitudes(int waveHeader) {
 		boolean signed=true; 
 		// usually 8bit is unsigned
@@ -39,7 +39,7 @@ public class WaveManipulation {
 		for (int i = 0; i < numSamples; i++) {
 			CleaningAlgorithm.normalizedAmplitudes.get(CleaningAlgorithm.normalizedAmplitudes.size()-1)[i] = (float) CleaningAlgorithm.amplitude[i] / maxAmplitude;
 		}
-	}*/
+	}
 
 	/**
 	 * Save the double array as a sound file (using .wav or .au format).

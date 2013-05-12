@@ -160,7 +160,6 @@ public class Statistical {
 	}
 	
 	public static double RMS(float[] f){
-		@SuppressWarnings("unused")
 		double result=0, sum=0;
 		int i=0;
 		

@@ -27,6 +27,7 @@ public class RegServiceStream extends Service{
 	private ListeningStream server;
 	
 	//Creation of the service and initialization of the pipes
+	@Override
 	public void onCreate(){
 		super.onCreate();
 		Log.i("reg", "Service created");
@@ -35,7 +36,7 @@ public class RegServiceStream extends Service{
 		//i=new Intent(this,BroadcastSender.class);
 	}
 	
-	
+	@Override
 	public int onStartCommand(Intent intent, int flags, int startId){
 		//on starting the string in the intent extras is recovered
 		super.onStartCommand(intent, flags, startId);
@@ -46,13 +47,16 @@ public class RegServiceStream extends Service{
 		
 		//the pipes are initialized and the function startRegistration is called
 		bs=new BroadcastSenderStream(pipeTX);
-		server=new ListeningStream(pipeIN);
+		server=new ListeningStream(pipeIN,fileName);
 		try {
 			startRegistration();
 		} catch (IllegalStateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -66,7 +70,8 @@ public class RegServiceStream extends Service{
 	}
 	
 	//This functions sets the recorder and starts all the thread for the sending and receiving
-	public void startRegistration() throws IllegalStateException, IOException{
+	public void startRegistration() throws IllegalStateException, IOException, InterruptedException{
+		//MainActivity.lock.acquire();
 		//The recorder is set to record wave file uncompressed
 		ar=ExtAudioRecorderForStream.getInstanse(false);
 		//Broadcast sender started
@@ -80,10 +85,11 @@ public class RegServiceStream extends Service{
 	}
 	
 	//On closure the recording is interrupted as the threads created by him
+	@Override
 	public void onDestroy(){
 		//The stopIt function are usefull to interrupt the while(true) in the run function of the threads
-		bs.stopIt();
-		server.stopIt();
+		bs.interrupt();
+		server.interrupt();
 		try {
 			//Waiting the threads destructions
 			bs.join();
@@ -98,6 +104,7 @@ public class RegServiceStream extends Service{
 		
 		//this.stopSelf();
 		Log.i("reg", "Registration stopped");
+		//MainActivity.lock.release();
 		super.onDestroy();
 	}
 }

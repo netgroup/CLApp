@@ -68,7 +68,7 @@ public class BroadcastSender extends Service{
 		int size=chunk.length, index=0;
 		byte[] array;
 		//String sizeInWord=Integer.toString(size);
-		String waveHeadS=wh.toString();
+		//String waveHeadS=wh.toString();
 		//Packet toSend=new Packet(waveHeadS.getBytes(),true);
 		//toSend.computeCrc();
 		//toSend.makePack();

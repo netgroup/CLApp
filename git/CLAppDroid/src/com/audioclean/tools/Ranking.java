@@ -1,10 +1,10 @@
 package com.audioclean.tools;
 
 public class Ranking {
-	int pos;
-	double sigma;
+	public int pos;
+	public double sigma;
 	
-	Ranking(){
+	public Ranking(){
 		this.pos=0;
 		this.sigma= 0.0;
 	}

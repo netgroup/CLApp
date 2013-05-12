@@ -1,10 +1,15 @@
 package com.CLApp;
 
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
+
 import com.example.CLAppDroid.R;
+import com.musicg.wave.Wave;
+import com.musicg.wave.WaveFileManager;
 import com.musicg.wave.WaveHeader;
 
 import android.os.Bundle;
+import android.os.Environment;
 import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
@@ -21,9 +26,11 @@ public class MainActivity extends Activity {
 	//String for the name of the file
 	private String name;
 	//Set of all the bytes array for the final track
-	public ArrayList<byte[]> finalTrack;
+	public static ArrayList<byte[]> finalTrack;
 	//Wave header for the save
 	public WaveHeader waveHead;
+	//Semaphore to wait the service ending
+	//public static Semaphore lock=new Semaphore(1);
 	
 	//On create we create the activity and we initialize the intent for the 
 	//recording service and the boolean for the button status
@@ -31,7 +38,7 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		intentRec=new Intent(this,regService.class);
+		intentRec=new Intent(this,RegServiceStream.class);
 		start=false;
 		//intentBcast=new Intent(this,ServerRec.class);
 		//Context ctx=this;
@@ -41,19 +48,28 @@ public class MainActivity extends Activity {
 	}
 	
 	//Function to manage the use of the button on the Context
-	public void clicked(View view){
+	public void clicked(View view) throws InterruptedException{
 		View loading=this.findViewById(R.id.progressBar1);
 		//if the button is already clicked, a Toast with a message is set
 		//while the service is stopped and the progress bar is hidden
 		//TODO insert the actions for the file save
 		if(start){
 			Toast tst;
-			String str="sending...";
+			String str="Finalizing...";
 			tst=Toast.makeText(this, str, Toast.LENGTH_LONG);
 			tst.show();
 			start=false;
 			loading.setVisibility(View.GONE);
 			stopService(intentRec);
+			//lock.acquire();
+			byte[] finalData=reformFinalTrack();
+			Wave temp=new Wave(Environment.getExternalStorageDirectory()+"/"+name+".wav");
+			waveHead=temp.getWaveHeader();
+			Wave toSave=new Wave(waveHead,finalData);
+			WaveFileManager wfm=new WaveFileManager();
+			wfm.setWave(toSave);
+			wfm.saveWaveAsFile("/"+name+".wav");
+			//lock.release();
 			/*intBcast=new Intent(this,BroadcastSender.class);
 			intBcast.putExtra("fileName", Environment.getExternalStorageDirectory().getPath()+"/"+name+".wav");
 			Log.i("reg", "starting broadcasting");
@@ -63,6 +79,10 @@ public class MainActivity extends Activity {
 		//finalTrack is initialized. The boolean "start" is set true,
 		//the progress bar is set visible and the recording service is started
 		else{
+			Toast tst;
+			String str="Recording...";
+			tst=Toast.makeText(this, str, Toast.LENGTH_LONG);
+			tst.show();
 			EditText text=(EditText) this.findViewById(R.id.editText1);
 			name=text.getText().toString();
 			finalTrack=new ArrayList<byte[]>();
@@ -81,7 +101,7 @@ public class MainActivity extends Activity {
 	}
 	
 	//The function add an array of byte to the ArrayList of bytes array of the final track
-	public void addToFinalTrack(byte[] piece){
+	public static void addToFinalTrack(byte[] piece){
 		finalTrack.add(piece);
 	}
 	
@@ -91,7 +111,7 @@ public class MainActivity extends Activity {
 	}
 	
 	//The function is used to reassemble the bytes arrays for the final track save 
-	public byte[] reformFinalTrack(){
+	public static byte[] reformFinalTrack(){
 		byte[] track;
 		int size=0, j=0;
 		for(int i=0;i<finalTrack.size();i++){

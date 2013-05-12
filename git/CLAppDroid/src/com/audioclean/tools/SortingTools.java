@@ -17,7 +17,7 @@ public class SortingTools {
 	}
 
 	//compute minimum value in a column of a float matrix
-	static int min(float[][] factors, int j){
+	public static int min(float[][] factors, int j){
 		int k=0;
 		float min=INF;
 		for(int i=0; i<factors.length;i++){
@@ -40,7 +40,7 @@ public class SortingTools {
 	}
 
 	//compute minimum value like the previous function, with doubles matrix
-
+	@SuppressWarnings("unused")
 	static int min(double[][] factors, int j){
 		int k=0;
 		double min=INF;
@@ -54,7 +54,7 @@ public class SortingTools {
 	}
 
 	//Computes minimum trace with a Ranking Array
-
+	@SuppressWarnings("unused")
 	static int minTrack(Ranking[] factors){
 		int min=0;
 		double value=INF;
@@ -68,6 +68,7 @@ public class SortingTools {
 	}
 
 	//computes minimum trace with a 2-D Ranking Array
+	@SuppressWarnings("unused")
 	static int minTrack(Ranking[][] factors, int j){
 		int min=0;
 		double  value=INF;
@@ -98,7 +99,7 @@ public class SortingTools {
 	}
 
 	/* sorting tracks with windows */
-	static void trackSort(Ranking[][] factors, int k) {
+	public static void trackSort(Ranking[][] factors, int k) {
 		Ranking temp;
 		int length=factors.length;
 		boolean swap=true;
