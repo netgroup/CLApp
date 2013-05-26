@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">CLAppDroidAlpha</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="StartRec">Start</string>
+    <string name="StopRec">Stop</string>
+    <string name="textfield">Insert name...</string>
+
+</resources>
