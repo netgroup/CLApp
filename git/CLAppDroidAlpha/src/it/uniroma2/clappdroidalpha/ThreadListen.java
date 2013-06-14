@@ -2,10 +2,9 @@ package it.uniroma2.clappdroidalpha;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.os.Build;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Message;
+import android.os.Bundle;
 import android.util.Log;
 
 import java.net.DatagramPacket;
@@ -18,52 +17,80 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Set;
 
 @SuppressLint("HandlerLeak")
-public class ThreadListen extends HandlerThread{
+public class ThreadListen extends Thread{
+	private final static int TIMEOUT=10000;
+	private final static int BUFFERED_SIZE=100000;
+	private final static int TIME_TO_UPDATE=1000000000;
 
 	public static volatile boolean stop=false;
 	private HashMap<InetAddress, ArrayList<byte[]>> arrChunks;
 	private HashMap<InetAddress, ArrayList<Integer>> arrOrder;
-	private ArrayList<byte[]> internalData;
-	private Lock lock;
-	private ServiceTest st;
+	private MainService st;
 	private String pathName;
+	public int payloadSize;
 	
-	public ThreadListen(String name, ServiceTest st, String pathName) {
-		super(name);
+	public ThreadListen(MainService st, String pathName) {
 		this.pathName=pathName;
+		payloadSize=0;
 		arrChunks=new HashMap<InetAddress,ArrayList<byte[]>>();
 		arrOrder=new HashMap<InetAddress,ArrayList<Integer>>();
-		internalData=new ArrayList<byte[]>();
+		new ArrayList<byte[]>();
 		stop=false;
-		lock=new ReentrantLock();
 		this.st=st;
 	}
-	
+	/*
 	@SuppressLint("HandlerLeak")
 	public Handler mHandler=new Handler(){
+
 		public void handleMessage(Message msg) {
+			int index;
 			if(msg.what==20){
 				lock.lock();
+				bSamples=msg.arg1;
 				internalData.add(msg.getData().getByteArray("data"));
+				byte[] recv=internalData.get(internalData.size()-1);
 				Log.i("Debug Listener","Msg received");
+				
+				payloadSize += recv.length;
+				if (bSamples == 16)
+				{
+					for (int i=0; i<recv.length/2; i++)
+					{ // 16bit sample size
+						short curSample = AudioRecorder.getShort(recv[i*2], recv[i*2+1]);
+						if (curSample > cAmplitude)
+						{ // Check amplitude
+							cAmplitude = curSample;
+						}
+					}
+				}
+				else	
+				{ // 8bit sample size
+					for (int i=0; i<recv.length; i++)
+					{
+						if (recv[i] > cAmplitude)
+						{ // Check amplitude
+							cAmplitude = recv[i];
+						}
+					}
+				}
+				super.handleMessage(msg);
 				lock.unlock();
 			}
 		}
 	};
-	
-	private byte[] mergeInternalData(){
+	*/
+	private byte[] mergeInternalData(ArrayList<byte[]> data){
 		int size=0, index=0;
-		for(int i=0;i<internalData.size();i++){
-			size+=internalData.get(i).length;
+		for(int i=0;i<data.size();i++){
+			size+=data.get(i).length;
 		}
 		byte[] array=new byte[size];
-		for(int i=0;i<internalData.size();i++){
-			for(int j=0;j<internalData.get(i).length;j++){
-				array[index]=internalData.get(i)[j];
+		for(int i=0;i<data.size();i++){
+			for(int j=0;j<data.get(i).length;j++){
+				array[index]=data.get(i)[j];
 				index++;
 			}
 		}
@@ -76,43 +103,62 @@ public class ThreadListen extends HandlerThread{
 		CleanTask ct = null;
 		try {
 			sock = new DatagramSocket(10000);
+			sock.setBroadcast(true);
 			Packet pack=null;
 			DatagramPacket pkt=new DatagramPacket(new byte[1500],1500);
-			sock.setSoTimeout(10000);
+			sock.setSoTimeout(TIMEOUT);
+			sock.setReceiveBufferSize(BUFFERED_SIZE);
 			long time=System.nanoTime();
-			st.lockServ.lock();
+			//st.lockServ.lock();
 			while(!stop){
-				if(System.nanoTime()-time>1000000000){
+				if(System.nanoTime()-time>TIME_TO_UPDATE){
+					//Broadcast part
+					Intent broadcast=new Intent();
+					broadcast.setAction("android.intent.action.MAIN");
+					Bundle envelope=new Bundle();
+					envelope.putSerializable("Addresses", arrOrder);
+					broadcast.putExtra("Envelope", envelope);
+					st.syncByteRate.lock();
+					envelope.putInt("ByteRate", st.byteRate);
+					st.byteRate=0;
+					st.syncByteRate.unlock();
+					//broadcast.putExtra("message", "funziona");
+					//broadcast.setAction(Intent.);
+					MainActivity.current.sendBroadcast(broadcast);
+					Log.d("Debug Listener","Broadcast sent");
+					
+					//Cleaning part
 					toClean=new ArrayList<byte[]>();
 					for(InetAddress tmp : arrChunks.keySet()){
 						toClean.add(reformPack(arrChunks.get(tmp), arrOrder.get(tmp)));
 					}
-					lock.lock();
-					byte[] internalDataArray=mergeInternalData();
-					lock.unlock();
-					toClean.add(internalDataArray);
+					arrChunks.clear();
+					arrOrder.clear();
+					st.record.lock();
+					if(!st.dataRecorded.isEmpty()){
+						byte[] internalDataArray=mergeInternalData(st.dataRecorded);
+						st.dataRecorded.clear();
+						toClean.add(internalDataArray);
+					}
+					st.record.unlock();
 					if(ct!=null)
 						ct.join();
 					ct=new CleanTask(toClean,pathName,st);
 					ct.start();
-					Log.i("Debug Listener","Data to clean sent");
-					arrChunks.clear();
-					arrOrder.clear();
-					internalData.clear();
+					Log.d("Debug Listener","Data to clean sent");
+					//internalData.clear();
 					time=System.nanoTime();
 				}
 				else{
 					try{
 						sock.receive(pkt);	
 					}catch(SocketTimeoutException e){
-						if(stop){
-							time=System.nanoTime();
+						if(!stop){
+							sock.setSoTimeout(TIMEOUT);
 						}
-						else
-							sock.setSoTimeout(10000);
 						continue;
 					}
-					sock.setSoTimeout(10000);
+					sock.setSoTimeout(TIMEOUT);
 					if(!mine(pkt.getAddress())){
 						pack=Packet.recoverDataDot(pkt.getData());
 						if(!arrChunks.containsKey(pkt.getAddress())){
@@ -121,35 +167,41 @@ public class ThreadListen extends HandlerThread{
 						}
 						arrChunks.get(pkt.getAddress()).add(pack.getData());
 						arrOrder.get(pkt.getAddress()).add(Integer.parseInt(new String(pack.index)));			
+						Log.i("Debug Listener","Packet UDP received");
 					}
+					
 				}
 			}
 			sock.close();
 			Log.i("Debug Listener","While(true) exited");
 			long timer=System.currentTimeMillis();
 			while(System.currentTimeMillis()-timer<5000){
-				if(!internalData.isEmpty()){
+				if(!st.dataRecorded.isEmpty()){
 					toClean=new ArrayList<byte[]>();
 					if(!arrChunks.isEmpty()){
 						for(InetAddress tmp : arrChunks.keySet()){
 							toClean.add(reformPack(arrChunks.get(tmp), arrOrder.get(tmp)));
 						}
 					}
-					lock.lock();
-					byte[] internalDataArray=mergeInternalData();
-					lock.unlock();
-					toClean.add(internalDataArray);
+					arrChunks.clear();
+					arrOrder.clear();
+					st.record.lock();
+					if(!st.dataRecorded.isEmpty()){
+						byte[] internalDataArray=mergeInternalData(st.dataRecorded);
+						st.dataRecorded.clear();
+						toClean.add(internalDataArray);
+					}
+					st.record.unlock();
+					
 					if(ct!=null)
 						ct.join();
 					ct=new CleanTask(toClean,pathName,st);
 					ct.start();
-					arrChunks.clear();
-					arrOrder.clear();
-					internalData.clear();
+					//internalData.clear();
 					timer=System.currentTimeMillis();
 				}
 			}
-			st.lockServ.unlock();
+			//st.lockServ.unlock();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -210,7 +262,7 @@ public class ThreadListen extends HandlerThread{
 		return toReturn;
 	}
 
-	//mine is a function that similar to getBroadcast already explained, returns if the IP address given
+	//mine is a function that, similar to getBroadcast already explained, returns if the IP address given
 	//is our address, to permit to our algorithm to exclude our data from the broadcast received
 	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 	private static boolean mine(InetAddress addr) throws SocketException {

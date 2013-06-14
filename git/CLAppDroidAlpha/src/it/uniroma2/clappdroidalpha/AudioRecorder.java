@@ -7,8 +7,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.AudioSource;
-import android.os.Bundle;
-import android.os.Message;
+import android.os.Environment;
 import android.util.Log;
 
 public class AudioRecorder 
@@ -80,8 +79,11 @@ public class AudioRecorder
 	
 	// File writer (only in uncompressed mode)
 	private RandomAccessFile headerFile;
-	private ThreadSender ts;
-	private ThreadListen tl;
+	//private ThreadSender ts;
+	//private ThreadListen tl;
+	private MainService st;
+	//TODO For debug
+	private RandomAccessFile testFile;
 	
 	// Number of channels, sample rate, sample size(size in bits), buffer size, audio source, sample size(see AudioFormat)
 	private short                    nChannels;
@@ -122,16 +124,35 @@ public class AudioRecorder
 	{
 		public void onPeriodicNotification(AudioRecord recorder)
 		{
+			
 			audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
+			/*try {
+				testFile.write(buffer);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} // Write buffer to file
+			
 			Bundle container=new Bundle();
 			container.putByteArray("data", buffer);
 			Message msgTx=ts.mHandler.obtainMessage(22);
 			Message msgIn=tl.mHandler.obtainMessage(20);
+			msgIn.arg2=indexChunk;
+			msgIn.arg1=bSamples;
 			msgTx.setData(container);
 			msgIn.setData(container);
 			msgTx.sendToTarget();
 			msgIn.sendToTarget();
-			//randomAccessWriter.write(buffer); // Write buffer to file
+			indexChunk++;
+			*/
+			st.record.lock();
+			st.dataRecorded.add(buffer.clone());
+			st.record.unlock();
+			
+			st.send.lock();
+			st.toSend.add(buffer.clone());
+			st.send.unlock();
+			
 			payloadSize += buffer.length;
 			if (bSamples == 16)
 			{
@@ -323,6 +344,7 @@ public class AudioRecorder
 						// write file header
 
 						headerFile = new RandomAccessFile(filePath, "rw");
+						testFile=new RandomAccessFile(Environment.getExternalStorageDirectory()+"/temporary.wav", "rw");
 						
 						headerFile.setLength(0); // Set file length to 0, to prevent unexpected behavior in case the file already existed
 						headerFile.writeBytes("RIFF");
@@ -338,6 +360,21 @@ public class AudioRecorder
 						headerFile.writeShort(Short.reverseBytes(bSamples)); // Bits per sample
 						headerFile.writeBytes("data");
 						headerFile.writeInt(0); // Data chunk size not known yet, write 0
+						
+						testFile.setLength(0); // Set file length to 0, to prevent unexpected behavior in case the file already existed
+						testFile.writeBytes("RIFF");
+						testFile.writeInt(0); // Final file size not known yet, write 0 
+						testFile.writeBytes("WAVE");
+						testFile.writeBytes("fmt ");
+						testFile.writeInt(Integer.reverseBytes(16)); // Sub-chunk size, 16 for PCM
+						testFile.writeShort(Short.reverseBytes((short) 1)); // AudioFormat, 1 for PCM
+						testFile.writeShort(Short.reverseBytes(nChannels));// Number of channels, 1 for mono, 2 for stereo
+						testFile.writeInt(Integer.reverseBytes(sRate)); // Sample rate
+						testFile.writeInt(Integer.reverseBytes(sRate*bSamples*nChannels/8)); // Byte rate, SampleRate*NumberOfChannels*BitsPerSample/8
+						testFile.writeShort(Short.reverseBytes((short)(nChannels*bSamples/8))); // Block align, NumberOfChannels*BitsPerSample/8
+						testFile.writeShort(Short.reverseBytes(bSamples)); // Bits per sample
+						testFile.writeBytes("data");
+						testFile.writeInt(0); // Data chunk size not known yet, write 0
 						
 						buffer = new byte[framePeriod*bSamples/8*nChannels];
 						state = State.READY;
@@ -394,6 +431,7 @@ public class AudioRecorder
 				try
 				{
 					headerFile.close(); // Remove prepared file
+					testFile.close();
 				}
 				catch (IOException e)
 				{
@@ -464,10 +502,9 @@ public class AudioRecorder
 	 * Call after prepare().
 	 * 
 	 */
-	public void start(ThreadSender ts,ThreadListen tl)
+	public void start(MainService st)
 	{
-		this.ts=ts;
-		this.tl=tl;
+		this.st=st;
 		if (state == State.READY)
 		{
 			if (rUncompressed)
@@ -497,7 +534,7 @@ public class AudioRecorder
 	 * Also finalizes the wave file in case of uncompressed recording.
 	 * 
 	 */
-	public void stop()
+	public RandomAccessFile stop()
 	{
 		if (state == State.RECORDING)
 		{
@@ -506,13 +543,19 @@ public class AudioRecorder
 				audioRecorder.stop();
 				try
 				{
+					
 					headerFile.seek(4); // Write size to RIFF header
 					headerFile.writeInt(Integer.reverseBytes(36+payloadSize));
 				
 					headerFile.seek(40); // Write size to Subchunk2Size field
 					headerFile.writeInt(Integer.reverseBytes(payloadSize));
+					
+					testFile.seek(4); // Write size to RIFF header
+					testFile.writeInt(Integer.reverseBytes(36+payloadSize));
 				
-					headerFile.close();
+					testFile.seek(40); // Write size to Subchunk2Size field
+					testFile.writeInt(Integer.reverseBytes(payloadSize));
+					//headerFile.close();
 				}
 				catch(IOException e)
 				{
@@ -525,15 +568,13 @@ public class AudioRecorder
 				mediaRecorder.stop();
 			}
 			state = State.STOPPED;
-			//pipeIN.notifyAll();
-			//pipeTX.notifyAll();
-			//notifyAll();
 		}
 		else
 		{
 			Log.e(AudioRecorder.class.getName(), "stop() called on illegal state");
 			state = State.ERROR;
 		}
+		return headerFile;
 	}
 	
 	/* 

@@ -6,10 +6,14 @@ public class IFManager {
 	private static String LOGTAG="IFManager";
 	
 	public static void startWifiAdHoc() {
+		String command = "modprobe dhd\n";
+		Log.i(LOGTAG, command);
+		Utils.rootExec(command);
+		
 		String wifiInterface = Utils.getWifiInterface();
 		
 		// Load wifi driver
-		String command = BaseSettings.APPDIR+"wifiloader start\n";
+		command = BaseSettings.APPDIR+"wifiloader start\n";
 		Log.i(LOGTAG, command);
 		String[] ctrl=Utils.rootExec(command);
 		
@@ -35,7 +39,8 @@ public class IFManager {
 		Log.i(LOGTAG, command);
 		Utils.rootExec(command);
 		
-		command = BaseSettings.APPDIR+"wifiloader stop\n";
+		//command = BaseSettings.APPDIR+"wifiloader stop\n";
+		command = "rmmod dhd\n";
 		Log.i(LOGTAG, command);
 		Utils.rootExec(command);
 	}

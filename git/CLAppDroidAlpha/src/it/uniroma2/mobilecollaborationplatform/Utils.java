@@ -97,7 +97,7 @@ public class Utils {
 	            NetworkInterface intf = en.nextElement();
 	            for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
 	                InetAddress inetAddress = enumIpAddr.nextElement();
-	                if(intf.getName().equals(getWifiInterface()) && inetAddress instanceof Inet4Address) {
+	                if(/*intf.getName().equals(getWifiInterface()) &&*/ inetAddress instanceof Inet4Address) {
 	                	Log.i(LOGTAG, "Local inet address: "+inetAddress.getHostAddress().toString());
 	                	return inetAddress;
 	                }
@@ -106,6 +106,21 @@ public class Utils {
 	    } catch (SocketException e) {}
 	    return null;
 	}
+	
+	public static InetAddress localAddressNotLo() throws SocketException {
+	    System.setProperty("java.net.preferIPv4Stack", "true");
+	    
+	    for (Enumeration<NetworkInterface> niEnum = NetworkInterface.getNetworkInterfaces(); niEnum.hasMoreElements();) {
+	        NetworkInterface ni = niEnum.nextElement();
+	        if (!ni.isLoopback()) {
+	            for (InterfaceAddress interfaceAddress : ni.getInterfaceAddresses()) {
+	            	return interfaceAddress.getAddress();
+	            }
+	        }
+	    }
+	    return null;
+	}
+	
 	
 	
 	/**

@@ -2,12 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:gravity="center_horizontal"
+    android:gravity="center_horizontal|right"
     android:orientation="vertical"
     android:paddingLeft="16dp"
     android:paddingRight="16dp"
     tools:context=".MainActivity" >
-	
+
     <Button
         android:id="@+id/button1"
         android:layout_width="match_parent"
@@ -15,9 +15,9 @@
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
         android:layout_marginTop="15dp"
-        android:text="@string/StartRec" 
-        android:onClick="startServ"/>
-    
+        android:onClick="startServ"
+        android:text="@string/StartRec" />
+
     <Button
         android:id="@+id/button2"
         android:layout_width="match_parent"
@@ -25,9 +25,9 @@
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
         android:layout_marginTop="15dp"
-        android:text="@string/StopRec" 
-        android:onClick="stopServ"/>
-    
+        android:onClick="stopServ"
+        android:text="@string/StopRec" />
+
     <EditText
         android:id="@+id/editText1"
         android:layout_width="match_parent"
@@ -38,12 +38,62 @@
         android:ems="10"
         android:hint="@string/textfield" />
 
-    <ProgressBar
-        android:id="@+id/progressBar1"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_marginTop="30dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" 
-        android:visibility="invisible"/>
+    <RelativeLayout
+        android:id="@+id/List"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginLeft="1dp"
+        android:layout_marginRight="1dp"
+        android:layout_marginTop="5dp"
+        android:layout_weight="0.77"
+        android:orientation="vertical" 
+        android:visibility="invisible">
+
+        <TextView
+            android:id="@+id/listOfSender"
+            android:layout_width="120dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:background="@drawable/border_textview"
+            android:gravity="center|top"
+            android:maxLines="100"
+            android:scrollbars="vertical" />
+
+         <TextView
+             android:id="@+id/ipAddr"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:layout_alignParentTop="true"
+             android:layout_marginLeft="5dp"
+             android:layout_marginBottom="5dp"
+             android:layout_toLeftOf="@+id/listOfSender"
+             android:gravity="center" />
+
+         <!--  <ProgressBar
+             android:id="@+id/progressBar1"
+             style="?android:attr/progressBarStyleSmall"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignBottom="@+id/ipAddr"
+             android:layout_alignParentLeft="true"
+             android:gravity="center_horizontal"
+             android:visibility="invisible" />
+        -->
+
+         <TextView
+             android:id="@+id/byteRate"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:layout_alignLeft="@+id/ipAddr"
+             android:layout_below="@+id/ipAddr"
+             android:layout_toLeftOf="@+id/listOfSender"
+             android:background="@drawable/border_textview"
+             android:gravity="center"
+             android:maxLines="100"
+             android:scrollbars="vertical" />
+
+    </RelativeLayout>
 
 </LinearLayout>
