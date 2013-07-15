@@ -3,9 +3,9 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Javaplot"/>
-	<classpathentry exported="true" kind="lib" path="/home/daniele/musicg.jar">
+	<classpathentry kind="lib" path="/home/daniele/git/musicg.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="file:/home/daniele/musicg.doc/"/>
+			<attribute name="javadoc_location" value="file:/home/daniele/git/musicg.doc/"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
