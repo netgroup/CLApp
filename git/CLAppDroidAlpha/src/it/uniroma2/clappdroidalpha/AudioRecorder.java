@@ -14,7 +14,7 @@ public class AudioRecorder
 {
 	private final static int[] sampleRates = {44100, 22050, 11025, 8000};
 	
-	public static AudioRecorder getInstanse(Boolean recordingCompressed)
+	public static AudioRecorder getInstance(Boolean recordingCompressed)
 	{
 		AudioRecorder result = null;
 		
@@ -78,7 +78,7 @@ public class AudioRecorder
 	private State          	state;
 	
 	// File writer (only in uncompressed mode)
-	private RandomAccessFile headerFile;
+	public RandomAccessFile headerFile;
 	//private ThreadSender ts;
 	//private ThreadListen tl;
 	private MainService st;
@@ -126,31 +126,25 @@ public class AudioRecorder
 		{
 			
 			audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
-			/*try {
+			// File output kept to check the difference between the 
+			//filtered and the unfiltered data
+			try {
 				testFile.write(buffer);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} // Write buffer to file
+			} 
 			
-			Bundle container=new Bundle();
-			container.putByteArray("data", buffer);
-			Message msgTx=ts.mHandler.obtainMessage(22);
-			Message msgIn=tl.mHandler.obtainMessage(20);
-			msgIn.arg2=indexChunk;
-			msgIn.arg1=bSamples;
-			msgTx.setData(container);
-			msgIn.setData(container);
-			msgTx.sendToTarget();
-			msgIn.sendToTarget();
-			indexChunk++;
-			*/
+			//Sending data to clean
 			st.record.lock();
-			st.dataRecorded.add(buffer.clone());
+			if(st.dataRecorded!=null)
+				st.dataRecorded.add(buffer.clone());
 			st.record.unlock();
 			
+			//Sending data to send
 			st.send.lock();
-			st.toSend.add(buffer.clone());
+			if(st.toSend!=null)
+				st.toSend.add(buffer.clone());
 			st.send.unlock();
 			
 			payloadSize += buffer.length;

@@ -3,8 +3,20 @@ import java.io.*;
 
 import com.musicg.wave.Wave;
 
+/**
+ * Class containing function to write txt file containing value to graph
+ * @author Daniele De Angelis
+ *
+ */
 public class DataFile {
-	
+	/**
+	 * File creator for index-data
+	 * @param track
+	 * 		Data
+	 * @param name
+	 * 		File name
+	 * @throws IOException
+	 */
 	public static void fileCreate(float[] track, String name) throws IOException{
 		File data=new File(name+".data");
 		data.createNewFile();
@@ -17,6 +29,14 @@ public class DataFile {
 		flow.close();	
 	}
 	
+	/**
+	 * File creator for index-data (integer version)
+	 * @param bestCombo
+	 * 		Data
+	 * @param name
+	 * 		File name
+	 * @throws IOException
+	 */
 	public static void fileCreate(int[] bestCombo, String name) throws IOException{
 		File data=new File(name+".data");
 		data.createNewFile();
@@ -29,6 +49,15 @@ public class DataFile {
 		flow.close();	
 	}
 	
+	
+	/**
+	 * File creator for time-data
+	 * @param track
+	 * 		Data
+	 * @param name
+	 * 		File name
+	 * @throws IOException
+	 */
 	public static void fileCreate(double[] track, String name) throws IOException{
 		File data=new File(name+".dat");
 		double time;

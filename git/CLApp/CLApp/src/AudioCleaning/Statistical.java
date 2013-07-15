@@ -1,23 +1,35 @@
 package AudioCleaning;
 
-import java.util.ArrayList;
-
+/**
+ * Class containing statistical functions
+ * @author Daniele De Angelis
+ *
+ */
 public class Statistical {
 
-	//Function to compute the covariance, float array version
+	/**
+	 * Compute covariance between two floats array
+	 * @param fs
+	 * 		First array
+	 * @param fs2
+	 * 		Second array
+	 * @return
+	 * 		Covariance value
+	 */
 	public static float covariance(float[] fs, float[] fs2){
 		int n=fs.length;
 		double avgA=0, avgB=0;
 		float covariance=0;
 		double x,z;
-				
+		
+		//average
 		for(int i=0; i<fs.length;i++){
 			avgA+=fs[i];
 			avgB+=fs2[i];
 		}
 		avgA=avgA/n;
 		avgB=avgB/n;
-		
+		//applying covariance function
 		for(int i=0;i<n;i++){
 			x=fs[i]-avgA;
 			z=fs2[i]-avgB;
@@ -26,34 +38,14 @@ public class Statistical {
 		return covariance;		
 	}
 
-	// Covariance, ArrayList<float[]> version
-	public static float covariance(ArrayList<float[]> fs1, ArrayList<float[]> fs2){
-		int n=0;
-		double avgA=0, avgB=0;
-		float covariance=0;
-		double x,z;
-				
-		for(int i=0; i<fs1.size();i++){
-			for(int j=0;j<fs1.get(i).length;j++){
-				avgA+=fs1.get(i)[j];
-				avgB+=fs2.get(i)[j];
-				n++;
-			}
-		}
-		avgA=avgA/n;
-		avgB=avgB/n;
-		
-		for(int j=0;j<fs1.size();j++){
-			for(int i=0;i<fs1.get(j).length;i++){
-				x=fs1.get(j)[i]-avgA;
-				z=fs2.get(j)[i]-avgB;
-				covariance+=(x*z)/n;
-			}
-		}
-		return covariance;		
-	}
 
-	// Function to compute variance value, float array version
+	/**
+	 * Function that computes the variance value (array of floats version)
+	 * @param a
+	 * 		Data
+	 * @return
+	 * 		Variance value
+	 */
 	public static float variance(float[] a){
 		int n=0;
 		float sum1=0;
@@ -61,12 +53,14 @@ public class Statistical {
 		float mean=0;
 		float variance;
 		
+		//average
 		for(int i=0;i<a.length;i++){
 			n++;
 			sum1+=a[i];
 		}
 		mean= sum1/n;
 		
+		//Variance function
 		for(int i=0;i<a.length;i++){
 			sum2+=(a[i]-mean)*(a[i]-mean);
 		}
@@ -74,7 +68,15 @@ public class Statistical {
 		return variance;
 	}
 
-	//Variance, matrix of float version
+	/**
+	 * Function that computes the variance value (bidimensional array of floats version)
+	 * @param a
+	 * 		Bidimensional array of floats
+	 * @param j
+	 * 		Index of data to compute
+	 * @return
+	 * 		Variance value
+	 */
 	public static float variance(float[][] a, int j){
 		int n=0;
 		float sum1=0;
@@ -82,54 +84,32 @@ public class Statistical {
 		float mean=0;
 		float variance;
 		
+		//average
 		for(int i=0;i<a[j].length;i++){
 			n++;
 			sum1+=a[j][i];
 		}
 		mean= sum1/n;
 		
+		//variance function
 		for(int i=0;i<a[j].length;i++){
 			sum2+=(a[j][i]-mean)*(a[j][i]-mean);
 		}
 		variance=sum2/(n-1);
 		return variance;
 	}
-
-	// Variance, ArrayList<float[]> version
-	public static float variance(ArrayList<float[]> a){
-		int n=0;
-		float sum1=0;
-		float sum2=0;
-		float mean=0;
-		float variance;
-		
-		for(int j=0;j<a.size();j++){
-			for(int i=0;i<a.get(j).length;i++){
-				n++;
-				sum1+=a.get(j)[i];
-			}
-		}
-		mean= sum1/n;
-		
-		for(int j=0;j<a.size();j++){
-			for(int i=0;i<a.get(j).length;i++){
-				sum2+=(a.get(j)[i]-mean)*(a.get(j)[i]-mean);
-			}
-		}
-		variance=sum2/(n-1);
-		return variance;
-	}
-	
-	public static double meanpwr(float f[]){
-		double result=0;
-		int i;
-		for(i=0;i<f.length;i++){
-			result+=f[i];
-		}
-		return result/i;
-	}
 	
 	
+	/**
+	 * Function that computes the RMSE between two track windows
+	 * denormalizing it from the h value coefficient of the cleaning algorithm
+	 * @param f1
+	 * 		Track 1
+	 * @param f2
+	 * 		Track 2
+	 * @return
+	 * 		RMSE value
+	 */
 	public static double normalizedRMSE(float[] f1, float[] f2){
 		double poweravgF1=avg_mod(f1);
 		double poweravgF2=avg_mod(f2);
@@ -142,6 +122,16 @@ public class Statistical {
 		return RMSE(f1,f2temp);
 	}
 	
+	/**
+	 * Function that computes the RMSE between two track windowed
+	 * denormalizing it from the h value coefficient of the cleaning algorithm
+	 * @param f1
+	 * 		Track 1 windowed
+	 * @param f2
+	 * 		Track 2 windowed
+	 * @return
+	 * 		RMSE value
+	 */
 	public static double normalizedRMSETotW(float[][] f1, float[][] f2){
 		double poweravgF1;
 		double poweravgF2;
@@ -159,8 +149,15 @@ public class Statistical {
 		return RMSETotW(f1,f2temp);
 	}
 	
-	public static double RMS(float[] f){
-		double result=0, sum=0;
+	/**
+	 * Computes RMS of a track
+	 * @param f
+	 * 		Track
+	 * @return
+	 * 		RMS value
+	 */
+	protected static double RMS(float[] f){
+		double result=0;
 		int i=0;
 		
 		for(i=0;i<f.length;i++){
@@ -171,8 +168,14 @@ public class Statistical {
 		return result;
 	}
 	
-	
-	public static double avg_mod(float[] f){
+	/**
+	 * Computes the absolute average
+	 * @param f
+	 * 		Data
+	 * @return
+	 * 		Absolute average
+	 */
+	 protected static double avg_mod(float[] f){
 		double result=0;
 		
 		for(int i=0;i<f.length;i++){
@@ -181,8 +184,16 @@ public class Statistical {
 		return result/((double) f.length);
 	}
 	
-	
-	public static double RMSE(float[] f1, float[] f2){
+	/**
+	 * Computes RMSE between two array of floats
+	 * @param f1
+	 * 		Array 1
+	 * @param f2
+	 * 		Array 2
+	 * @return
+	 * 		RMSE value
+	 */
+	private static double RMSE(float[] f1, float[] f2){
 		double result=0, sum=0;
 		int i=0, j=0;
 		
@@ -199,7 +210,16 @@ public class Statistical {
 		return result;
 	}
 	
-	public static double RMSETotW(float[][] f1, float[][] f2){
+	/**
+	 * Computes RMSE between two bidimensional array of floats
+	 * @param f1
+	 * 		Array 1
+	 * @param f2
+	 * 		Array 2
+	 * @return
+	 * 		RMSE value
+	 */
+	private static double RMSETotW(float[][] f1, float[][] f2){
 		double result=0, sum=0;
 		int i=0, j=0, z=0, s=0, tot=0;
 		

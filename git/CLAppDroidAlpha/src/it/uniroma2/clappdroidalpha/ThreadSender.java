@@ -13,18 +13,97 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.util.Log;
 
+/**
+ * Thread for the data sending
+ * @author Daniele De Angelis
+ *
+ */
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class ThreadSender extends Thread {
-	private MainService st;
+	
 	public volatile static boolean exitLoop=false;
-	private int index;
-	private final int fragmentSize=1000;
-	private int byteSumma;
-	//public Handler mHandler;
-	//For the explanation of that function, we remand you to the ListenStream class
+	
+	private MainService st; //Service who called that thread
+	private int index; //Actual index of the packet
+	private final int fragmentSize=1200; //Maximum size of the packet
+	private int bitSumma; //variable to save the bit sent
+	
+	/**
+	 * Constructor
+	 * @param st
+	 * 		Service who calls the thread
+	 */
+	public ThreadSender(MainService st) {
+		this.st=st;
+		exitLoop=false;
+		index=1;
+		bitSumma=0;
+	}
+	
+	@Override
+	public void run(){
+		byte[] send;
+		try{
+			ArrayList<byte[]> fragments;
+			//Creating the exit socket
+			DatagramSocket sock=new DatagramSocket();
+			sock.setBroadcast(true);
+			//Setting the broadcast destination
+			InetAddress addr=InetAddress.getByName(getBroadcast());
+			Packet envelope;
+			long time=System.currentTimeMillis();
+			while(!exitLoop){
+				//if toSend isn't empty
+				if(!st.toSend.isEmpty()){
+					st.send.lock();
+					//Picks the data from the service and inserts it into an array
+					send=reform(st.toSend);
+					st.toSend.clear();
+					st.send.unlock();
+				}
+				//If toSend is empty there isn't any data to send
+				else{
+					continue;
+				}
+				//If a second is elapsed the bits sent value updates the bit rate
+				if(System.currentTimeMillis()-time>1000){
+					st.syncBitRate.lock();
+					st.bitRate=bitSumma;
+					bitSumma=0;
+					st.syncBitRate.unlock();
+					time=System.currentTimeMillis();
+				}
+				bitSumma+=send.length*8;
+				//Data in send array are divided to be sent on the wifi adhoc net
+				fragments=fragment(send);
+				for(int i=0;i<fragments.size();i++){	
+					//Each packet is sent with is own index
+					envelope=new Packet(fragments.get(i),index);
+					envelope.makePack();
+					byte[] overall=envelope.getOverall();
+					byte[] trmd=Packet.terminate(overall);
+					DatagramPacket pkt=new DatagramPacket(trmd,trmd.length,addr,10000);
+					sock.send(pkt);
+					Log.i("Debug Sender","Packet sent "+System.nanoTime());
+					index++;
+				}
+				send=new byte[fragmentSize];
+				fragments.clear();
+			}
+    	} catch (Exception e){
+    		e.printStackTrace();
+    	}
+	}
+	
+	/**
+	 * Function that returns the broadcast ip of the actual net
+	 * @return
+	 * 		Broadcast ip
+	 * @throws SocketException
+	 */
 	@SuppressLint("NewApi")
 	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
-	public static String getBroadcast() throws SocketException {
+	private static String getBroadcast() throws SocketException {
 	   System.setProperty("java.net.preferIPv4Stack", "true");
 	   for (Enumeration<NetworkInterface> niEnum = NetworkInterface.getNetworkInterfaces(); niEnum.hasMoreElements();) {
 	      NetworkInterface ni = niEnum.nextElement();
@@ -37,117 +116,15 @@ public class ThreadSender extends Thread {
 	   }
 	   return null;
 	}
-	
-	public ThreadSender(MainService st) {
-		this.st=st;
-		exitLoop=false;
-		index=1;
-		byteSumma=0;
-	}
-	
-	private boolean Xor(boolean x, boolean y){
-		return ( ( x || y ) && ! ( x && y ) );
-	}
-	
-	@Override
-	public void run(){
-		byte[] send;
-		try{
-			ArrayList<byte[]> fragments;
-			DatagramSocket sock=new DatagramSocket();
-			sock.setBroadcast(true);
-			InetAddress addr=InetAddress.getByName(getBroadcast());
-			Packet envelope;
-			long time=System.currentTimeMillis();
-			while(!exitLoop){//Xor(exitLoop,st.toSend.isEmpty()) || !(exitLoop || st.toSend.isEmpty())){
-				
-	
-				if(!st.toSend.isEmpty()){
-					st.send.lock();
-					send=reform(st.toSend);
-					st.toSend.clear();
-					st.send.unlock();
-				}
-				else{
-					//sleep(1);
-					continue;
-				}
-				if(System.currentTimeMillis()-time>1000){
-					st.syncByteRate.lock();
-					st.byteRate=byteSumma;
-					byteSumma=0;
-					st.syncByteRate.unlock();
-					time=System.currentTimeMillis();
-				}
-				byteSumma+=send.length;
-				fragments=fragment(send);
-				for(int i=0;i<fragments.size();i++){	
-					envelope=new Packet(fragments.get(i),index);
-					envelope.makePack();
-					byte[] overall=envelope.getOverall();
-					DatagramPacket pkt=new DatagramPacket(overall,overall.length,addr,10000);
-					sock.send(pkt);
-					Log.i("Debug Sender","Packet sent "+System.nanoTime());
-					index++;
-				}
-				send=new byte[1000];
-				fragments.clear();
-			}
-    	} catch (Exception e){
-    		e.printStackTrace();
-    	}
-	}
-	
-	/*
-	@SuppressLint("HandlerLeak")
-	public void run(){
-		Looper.prepare();
-		mHandler = new Handler() {
-		    public void handleMessage(Message msg) {
-		        try{
-		        	byte[] send;
-		        	DatagramSocket sock=new DatagramSocket();
-		        	InetAddress addr=InetAddress.getByName(getBroadcast());
-		        	Packet envelope;
-		        	if(msg.what==22){
-		        		send=msg.getData().getByteArray("data");
-		        		envelope=new Packet(send,i);
-		        		envelope.makePack();
-		        		byte[] overall=envelope.getOverall();
-		        		DatagramPacket pkt=new DatagramPacket(overall,overall.length,addr,10000);
-		        		sock.send(pkt);
-		        		//msg=null;
-		        		Log.i(" Debug Sender","Packet sent");
-		        		i++;
-		        		
-		        		super.handleMessage(msg);
-		        	}
-		        }catch(Exception e){
-		        	e.printStackTrace();
-		        }
-		    }
-		};
-		Looper.loop();
-	}
-	*/
-	
-	
-	/*
-	public void killServ(){
-		long time=System.nanoTime();
-		while(true){
-			if(System.nanoTime()-time>1000000000){
-				if(!this.mHandler.hasMessages(22)){
-					break;
-				}
-				time=System.nanoTime();
-			}
-		}
-		this.mHandler.getLooper().quit();
-	}
-	*/
-	
-	public byte[] reform(ArrayList<byte[]> data){
+
+	/**
+	 * Reform an array list of array of bytes into an unique array
+	 * @param data
+	 * 		Data
+	 * @return
+	 * 		Unique array of byte
+	 */
+	private byte[] reform(ArrayList<byte[]> data){
 		byte[] track;
 		int size=0, j=0;
 		for(int i=0;i<data.size();i++){
@@ -163,6 +140,13 @@ public class ThreadSender extends Thread {
 		return track;
 	}
 	
+	/**
+	 * Divides an array of bytes into smaller array to make easier the sending phase
+	 * @param data
+	 * 		Data
+	 * @return
+	 * 		An array list of bytes arrays
+	 */
 	private ArrayList<byte[]> fragment(byte[] data){
 		byte[] array;
 		ArrayList<byte[]> fragments=new ArrayList<byte[]>();

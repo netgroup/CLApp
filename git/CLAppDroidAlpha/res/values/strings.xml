@@ -6,6 +6,11 @@
     <string name="hello_world">Hello world!</string>
     <string name="StartRec">Start</string>
     <string name="StopRec">Stop</string>
-    <string name="textfield">Insert name...</string>
-
+    <string name="textfield">Insert file name...</string>
+	<string name="NS">http://schemas.android.com/apk/res/net.snowdon</string>
+	<string name="checkbox">UsageStat</string>
+	<string name="listText">Inactive</string>
+	<string name="iptext">null</string>
+	<string name="ratetext">0 Kbps</string>
+	
 </resources>

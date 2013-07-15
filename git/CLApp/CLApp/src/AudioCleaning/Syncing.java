@@ -9,33 +9,34 @@ import com.musicg.wave.Wave;
 import CorrelationMatrix.CorrelationCell;
 import CorrelationMatrix.CorrelationMatrix;
 
+/**
+ * Class containing the synchronization functions
+ * @author Daniele De Angelis
+ *
+ */
 public class Syncing {
 
-	public static boolean stamp=true;	//boolean to activate some messages
-	static int MAXDELAY=1350000;	//max delay for the cross correlation
-	/* cross correlation to find the delay between the tracks, float version */
-	public static CorrelationCell xcross(float[] fs, float[] fs2, int offset){
+	protected static boolean stamp=true;	//boolean to activate some messages
+	private static int MAXDELAY=1350000;	//max delay for the cross correlation
+	
+	/**
+	 * Function that do the shifting between the tracks and computes their correlation
+	 * @param fs
+	 * 		Track 1
+	 * @param fs2
+	 * 		Track 2
+	 * @param offset
+	 * 		Offset between one shifting and another
+	 * @return
+	 * 		An object CorrelationCell containing the best shifting value and his correlation value
+	 */
+	private static CorrelationCell xcross(float[] fs, float[] fs2, int offset){
 		double r=0, maxr=Double.NEGATIVE_INFINITY;
-		int delay=0, delayS=0, bar=(MAXDELAY*2)/100;
+		int delay=0, delayS=0;
 		int rangeDelay=MAXDELAY<fs.length ? MAXDELAY : fs.length;
 		
-		if(stamp){
-			System.out.println("fs");
-			for(int i=0;i<fs.length;i++){
-				System.out.println(fs[i]+1);
-			}
-			System.out.println("\n");
-		
-			System.out.println("fs2");
-			for(int i=0;i<fs.length;i++){
-				System.out.println(fs2[i]+1);
-			}
-			System.out.println("\n");
-		}
+		//Loop that do the shiftings
 		for(delay=-rangeDelay;delay<=rangeDelay;delay+=offset){
-			//uncomment it to draw a progress bar
-			//if(delay%bar==0 && stamp)
-				//System.out.print(">");
 			r=crosscorrelation(fs,fs2,delay,offset);
 			if(maxr<=r){
 				maxr=r;
@@ -49,61 +50,20 @@ public class Syncing {
 		return new CorrelationCell(maxr,delayS);
 	}
 
-	/* cross correlation to find the delay between the tracks, double version */
-	public static CorrelationCell xcross(double[] fs, double[] fs2, int offset) {
-		double r, maxr=Double.NEGATIVE_INFINITY;
-		int delay=0, delayS=0, bar=(MAXDELAY*2)/100;
-		int rangeDelay=MAXDELAY<fs.length ? MAXDELAY : fs.length;
-		
-		for(delay=-rangeDelay;delay<=rangeDelay;delay+=offset){
-			if(delay%bar==0 && stamp)
-				System.out.print(">");
-			r=crosscorrelation(fs,fs2,delay,offset);
-			if(maxr<r){
-				maxr=r;
-				delayS=delay;
-			}
-		}
-		if(stamp)
-			System.out.println("\n");
-		return new CorrelationCell(maxr,delayS);
-	}
-
-	//function to compute the correlation in double values
-	public static double crosscorrelation(double[] fs, double[] fs2, int delay, int offset){
-		double sumAB=0, sumA=0, sumB=0, avgA=0, avgB=0, denom=0, r;
-		int count=0;
-		int j=0;
-		/* avg */
-		for(int z=0; z<fs.length; z+=offset){
-			j=z;
-	        count++;
-	        avgA+=fs[z];
-	        avgB+=fs2[j];
-		}
-		j=0;
-		avgA=avgA/(count);
-		avgB=avgB/(count);
-		for(int i=0; i<fs.length; i+=offset){
-			j=i;
-	        sumA+=(fs[i]-avgA)*(fs[i]-avgA);
-	        sumB+=(fs2[j]-avgB)*(fs2[j]-avgB);
-		}
-		denom=Math.sqrt(sumA*sumB);
-		j=0;
-		for(int i=0;i<fs.length;i+=offset){
-			j=i+delay;
-			if (j < 0 || j >= fs.length)
-				continue;
-	        else{   	
-	    		sumAB+=(fs[i]-avgA)*(fs2[j]-avgB);
-	        }
-		}
-		r=sumAB/denom;
-		return r;
-	}
-
-	public static double crosscorrelation(float[] fs, float[] fs2, int delay, int offset){
+	/**
+	 * Correlation between two tracks
+	 * @param fs
+	 * 		Track 1
+	 * @param fs2
+	 * 		Track 2
+	 * @param delay
+	 * 		Delay value between the tracks
+	 * @param offset
+	 * 		Offset of the shiftings
+	 * @return
+	 * 		The correlation value
+	 */
+	private static double crosscorrelation(float[] fs, float[] fs2, int delay, int offset){
 		double sumAB=0, sumA=0, sumB=0, avgA=0, avgB=0, denom=0, r;
 		int count=0;
 		int j=0;
@@ -145,7 +105,9 @@ public class Syncing {
 		return r;
 	}
 
-	//Zeropadding track for the maximum lenght
+	/**
+	 * Function to zeropad the tracks in CleaningAlgorithm
+	 */
 	public static void zeroPadding(){
 		int longest=longest(CleaningAlgorithm.normalizedAmplitudes);
 		preparation(longest);
@@ -153,7 +115,11 @@ public class Syncing {
 		CleaningAlgorithm.amplitudeReady.trimToSize();
 	}
 
-	/* function to extends all the traces to maximum lenght */
+	/**
+	 * function to extends all the traces to maximum lenght
+	 * @param longest
+	 * 		Longest track size
+	 */
 	private static void preparation(int longest){
 		int size=CleaningAlgorithm.normalizedAmplitudes.get(longest).length;
 		float[] temp; 
@@ -170,7 +136,13 @@ public class Syncing {
 		}
 	}
 
-	/* Function to find the longest track */
+	/**
+	 * Function to find the longest track size
+	 * @param normalizedAmplitudes2
+	 * 		Set of tracks
+	 * @return
+	 * 		Longest size
+	 */
 	private static int longest(ArrayList<float[]> normalizedAmplitudes2){
 		int longest=0;
 		int size=0;
@@ -182,62 +154,68 @@ public class Syncing {
 		}
 		return longest;
 	}
-
-	//Function to sync the traces
-	public static void syncronization(CorrelationMatrix mx, int i){
+	
+	/**
+	 * Function that with the correlation matrix synchronizes all the tracks
+	 * @param mx
+	 * 		Correlation matrix
+	 * @param i
+	 * 		Reference track index
+	 */
+	private static void synchronization(CorrelationMatrix mx, int i){
 		int offset;
 		float[] sync;
 		
+		//Loop over the entire row, picking one track at time
 		for(int j=0;j<mx.dimension;j++){
+			//If the track itself, do nothing
 			if(j==i){
 				continue;
 			}
+			
 			else{
+				//If the track is early, the code delays it
 				offset=mx.matrix[i][j].delay;
 				if(offset>=0){
-					/*sync=new float[offset]; 
-					for(int z=0;z<offset;z++){
-						sync[z]=amplitudeReady.get(j)[z];
-					}*/
+					
 					int k=0;
 					//shifting the vector
 					for(int z=offset;z<CleaningAlgorithm.amplitudeReady.get(j).length;z++){
 						CleaningAlgorithm.amplitudeReady.get(j)[k]=CleaningAlgorithm.amplitudeReady.get(j)[z];
 						k++;
 					}
-					//int z=0;
 					//zeropadding "exceding" float
 					for(;k<CleaningAlgorithm.amplitudeReady.get(j).length;k++){
 						CleaningAlgorithm.amplitudeReady.get(j)[k]=0;
-						//z++;
 					}
 				}
+				//The track is delayed
 				else{
 					//same actions done before
 					sync=new float[offset*(-1)];
 					int m=sync.length-1;
-					/*for(int z=(amplitudeReady.get(j).length)-1;z>(amplitudeReady.get(j).length-offset);z--){
-						sync[m]=amplitudeReady.get(j)[z];
-						m--;
-					}*/
 					m=CleaningAlgorithm.amplitudeReady.get(j).length-1;
 					for(int z=(CleaningAlgorithm.amplitudeReady.get(j).length-1-(offset*(-1)));z>=0;z--){
 						CleaningAlgorithm.amplitudeReady.get(j)[m]=CleaningAlgorithm.amplitudeReady.get(j)[z];
 						CleaningAlgorithm.amplitudeReady.get(j)[z]=0;
 						m--;
 					}
-					//int z=sync.length-1;
 					for(;m>=0;m--){
 						CleaningAlgorithm.amplitudeReady.get(j)[m]=0;
-						//z--;
 					}
 				}
 			}
 		}
 	}
 
-	//Function to sync the traces
-	public static int[] selectionSyncronization(int winLen){
+	/**
+	 * Function that manage all the synchronization process
+	 * @param winLen
+	 * 		Offset for the cross correlation
+	 * @return
+	 * 		An array with only two elements: the index of the first best track and the index of the second
+	 */
+	public static int[] selectionSynchronization(int winLen){
 		int offset=winLen;
 		System.out.println("Longest track: "+CleaningAlgorithm.amplitudeReady.get(0).length);
 		/* cross correlation matrix creation */
@@ -256,17 +234,19 @@ public class Syncing {
 		ref[1]=matrix.secondMaxRow();
 		/* syncing of the tracks refered to the track with maximum correlation*/
 		System.out.println("Maximum correlation track "+(ref[0])+", second: "+ref[1]);
-		Syncing.syncronization(matrix, ref[0]);
+		Syncing.synchronization(matrix, ref[0]);
 		System.out.println("Tracks synced!\n");
-		for(int i=0;i<CleaningAlgorithm.amplitudeReady.size();i++){
-			Syncing.stampSynced(CleaningAlgorithm.amplitudeReady.get(i), "synced"+i+".jpg");
-		}
 		matrix=null;
 		return ref;
 	}
 
-	static float INF=Float.MAX_VALUE;
-	
+	/**
+	 * Function that renderizes the tracks wave after the syncing 
+	 * @param t
+	 * 		Track
+	 * @param name
+	 * 		Name of the .jpg file
+	 */
 	public static void stampSynced(float[] t, String name){
 		Wave render;
 		GraphicRender r=new GraphicRender();
@@ -278,5 +258,4 @@ public class Syncing {
 		f=new File("temp.wav");
 		f.delete();
 	}
-
 }

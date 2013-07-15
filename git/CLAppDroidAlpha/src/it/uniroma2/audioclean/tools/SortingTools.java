@@ -1,22 +1,23 @@
 package it.uniroma2.audioclean.tools;
 
+/**
+ * Contains some sorting functions
+ * @author Daniele De Angelis
+ *
+ */
 public class SortingTools {
 
 	static float INF=Float.MAX_VALUE;
-	//Computing the minimum value in a float array
-	static int min(float[] valori){
-		int k=0;
-		float min=INF;
-		for(int i=0; i<valori.length;i++){
-			if(min>valori[i]){
-				min=valori[i];
-				k=i;
-			}
-		}
-		return k;
-	}
-
-	//compute minimum value in a column of a float matrix
+	
+	/**
+	 * Computes the minimum value in a column of a bidimensional array of floats
+	 * @param factors
+	 * 		Bidimensional array
+	 * @param j
+	 * 		Column index
+	 * @return
+	 * 		Min value
+	 */
 	public static int min(float[][] factors, int j){
 		int k=0;
 		float min=INF;
@@ -29,73 +30,14 @@ public class SortingTools {
 		return k;
 	}
 	
-	public static float peak(float[] amplitudes){
-		float max=Float.MIN_VALUE;
-		for(int i=0;i<amplitudes.length;i++){
-			if(max<Math.abs(amplitudes[i])){
-				max=Math.abs(amplitudes[i]);
-			}
-		}
-		return max;
-	}
-
-	//compute minimum value like the previous function, with doubles matrix
-	static int min(double[][] factors, int j){
-		int k=0;
-		double min=INF;
-		for(int i=0; i<factors.length;i++){
-			if(min>factors[i][j]){
-				min=factors[i][j];
-				k=i;
-			}
-		}
-		return k;
-	}
-
-	//Computes minimum trace with a Ranking Array
-	static int minTrack(Ranking[] factors){
-		int min=0;
-		double value=INF;
-		for(int i=1;i<factors.length;i++){
-			if(value>factors[i].sigma){
-				value=factors[i].sigma;
-				min=factors[i].pos;
-			}
-		}
-		return min;
-	}
-
-	//computes minimum trace with a 2-D Ranking Array
-	static int minTrack(Ranking[][] factors, int j){
-		int min=0;
-		double  value=INF;
-		for(int i=1;i<factors.length;i++){
-			if(value>factors[i][j].sigma){
-				value=factors[i][j].sigma;
-				min=factors[i][j].pos;
-			}
-		}
-		return min;
-	}
-
-	/* sorting tracks */
-	static void trackSort(Ranking[] factors) {
-		Ranking temp;
-		int j=0;
-		while(j<factors.length){
-			for(int i=0,z=1;i<(factors.length-1-j) && z<(factors.length-j);i++,z++){
-				if(factors[i].sigma>factors[z].sigma){
-					temp=factors[i];
-					factors[i]=factors[z];
-					factors[z]=temp;
-				}			
-			}
-			j++;
-		}
-		
-	}
-
-	/* sorting tracks with windows */
+	/**
+	 * Sorts the classification done in the algorithm ranking phase
+	 * for a specific window
+	 * @param factors
+	 * 		Classification
+	 * @param k
+	 * 		Window index
+	 */
 	public static void trackSort(Ranking[][] factors, int k) {
 		Ranking temp;
 		int length=factors.length;

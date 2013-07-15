@@ -4,41 +4,50 @@ package it.uniroma2.clappdroidalpha;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 @SuppressLint("HandlerLeak")
+/**
+ * Class of the application service
+ * @author Daniele De Angelis
+ *
+ */
 public class MainService extends Service {
 	
 	private ThreadListen tl;
 	private ThreadSender ts;
-	private AudioRecorder ar;
+	protected AudioRecorder ar;
 	public final IBinder loc=new LocalBinder();
-	private String name;
-	private String pathname;
-	public Lock lockServ=new ReentrantLock();
-	private Context ctx;
+	private String name; //File name
+	private String pathname; //File path
 	
-	public ArrayList<byte[]> dataRecorded;
-	public ArrayList<byte[]> dataCleaned;
-	public ArrayList<byte[]> toSend;
-	public Lock record;
-	public Lock cleaned;
-	public Lock send;
-	
-	public Lock syncByteRate;
-	public int byteRate;
-	
+	protected ArrayList<byte[]> dataRecorded; //Data structure for data from the audio recorder
+	protected ArrayList<byte[]> toSend; //Data structure to send on the net
+	// Data structures for the graph
+	protected ArrayList<Integer> times;
+	protected ArrayList<Double> RMSE;
+	//Lock for the dataRecorded structure
+	protected Lock record;
+	//Lock for the data cleaning phase
+	protected Lock cleaned;
+	//Lock for the toSend structure
+	protected Lock send;
+	//Lock for the bit rate view updates
+	protected Lock syncBitRate;
+	//bit rate value
+	protected int bitRate;
+	protected boolean mode; //Boolean to control performance stats saving
+	protected boolean ctrlNorm; //Boolean to activate the track normalization
+	protected int counter; 
+	protected double movingAverageOld=Double.POSITIVE_INFINITY; //Old average for the normalization
 	
 	public class LocalBinder extends Binder {
         MainService getService() {
@@ -46,99 +55,92 @@ public class MainService extends Service {
             return MainService.this;
         }
     }
-	/*
-	@SuppressLint("HandlerLeak")
-	public Handler mHandler=new Handler(){
-		public void handleMessage(Message msg) {
-			
-			if(msg.what==30){
-				lockReceive.lock();
-				cleaned.add(msg.getData().getByteArray("data"));
-				Log.i("Debug Service","Cleaned part received");
-				//msg.recycle();
-				super.handleMessage(msg);
-				lockReceive.unlock();
-			}
-		}
-	};
-	*/
-	public void startServiceTest(Context ctx,String name,String pathname){
+	
+	/**
+	 * Starts the audio recording and all the linked functions
+	 * @param name
+	 * 		file name
+	 * @param pathname
+	 * 		file path
+	 */
+	public void startMainService(String name,String pathname){
 		Log.i("Debug service","Button on");
-		this.ctx=ctx;
-		ar=AudioRecorder.getInstanse(false);
+		ctrlNorm=false;
+		//Setting up a new audio recorder
+		ar=AudioRecorder.getInstance(false);
 		this.name=name;
 		this.pathname=pathname;
 		
+		//Initializing all the data structures
 		dataRecorded=new ArrayList<byte[]>();
-		dataCleaned=new ArrayList<byte[]>();
 		toSend=new ArrayList<byte[]>();
+		RMSE=new ArrayList<Double>();
+		times=new ArrayList<Integer>();
 		record=new ReentrantLock();
 		cleaned=new ReentrantLock();
 		send=new ReentrantLock();
+		syncBitRate=new ReentrantLock();
+		bitRate=0;
+		counter=0;
+		movingAverageOld=Double.POSITIVE_INFINITY;
 		
-		syncByteRate=new ReentrantLock();
-		byteRate=0;
-		
+		//constructing the threads
 		ts=new ThreadSender(this);
 		tl=new ThreadListen(this, this.pathname+"/"+this.name);
+		//Starting the threads
 		ts.start();
 		tl.start();
+		//Starting the audio recorder
 		ar.setOutputFile(this.pathname+"/"+this.name);
 		ar.prepare();
 		ar.start(this);
 	}
 	
-	public void stopServiceTest() throws InterruptedException, IOException{
+	/**
+	 * Stops the audio recording and all the linked functions
+	 * @throws InterruptedException
+	 * @throws IOException
+	 */
+	public void stopMainService() throws InterruptedException, IOException{
 		Log.i("Debug service","Button off");
+		//Stopping the audio recorder
 		RandomAccessFile output=ar.stop();
-		Toast finish=Toast.makeText(ctx, "Wait completion...", Toast.LENGTH_SHORT);
+		//Stopping the threads
 		ThreadListen.stop=true;
 		ThreadSender.exitLoop=true;
 		if(tl.isAlive()){
-			finish.show();
-			while(tl.isAlive()){
-				finish.setDuration(Toast.LENGTH_SHORT);
-			}
+			tl.join();
 		}
-		//lockServ.lock();
-		//lockReceive.lock();
-		this.cleaned.lock();
-		byte[] finalData=reformFinalTrack();
-		output.write(finalData);
-		this.cleaned.unlock();
-		//Wave temp=new Wave(Environment.getExternalStorageDirectory()+"/"+this.pathName);
-		//WaveHeader waveHead=temp.getWaveHeader();
-		//Wave toSave=new Wave(waveHead,finalData);
-		//WaveFileManager wfm=new WaveFileManager();
-		//wfm.setWave(toSave);
-		//wfm.saveWaveAsFile(pathName);
-		//lockReceive.unlock();
-		//lockServ.unlock();	
-		//output.seek(4); // Write size to RIFF header
-		//output.writeInt(Integer.reverseBytes(36+tl.payloadSize));
-	
-		//output.seek(40); // Write size to Subchunk2Size field
-		//output.writeInt(Integer.reverseBytes(tl.payloadSize));
+		//Closing the file and resetting the audio recorder
 		output.close();
-		
 		ar.release();
 		ar.reset();
 	}
 	
-	//The function is used to reassemble the bytes arrays for the final track save 
-	public byte[] reformFinalTrack(){
-		byte[] track;
+	/**
+	 * The function is used to reassemble the bytes arrays for the final track save 
+	 * @param wind
+	 * 		Track clusterized
+	 * @return
+	 * 		Track not windowed
+	 */
+	@SuppressWarnings("unused")
+	private float[] reformFinalTrack(float[][] wind){
+		float[] track;
 		int size=0, j=0;
-		for(int i=0;i<dataCleaned.size();i++){
-			size+=dataCleaned.get(i).length;
+		for(int i=0;i<wind.length;i++){
+			size+=wind[i].length;
 		}
-		track=new byte[size];
-		for(int i=0;i<dataCleaned.size();i++){
-			for(int t=0;t<dataCleaned.get(i).length;t++){
-				track[j]=dataCleaned.get(i)[t];
-				j++;
+		track=new float[size];
+		j=size-1;
+		for(int i=wind.length-1;i>=0;i--){
+			for(int t=wind[i].length-1;t>=0;t--){
+				track[j]=wind[i][t];
+				j--;
 			}
+			wind[i]=null;
 		}
+		wind=null;
 		return track;
 	}
 	

@@ -1,17 +1,25 @@
 package it.uniroma2.clappdroidalpha;
 
-//Class used to standardize the packet structure
+/**
+ * Class of standard packet structure
+ * @author Daniele De Angelis
+ *
+ */
 public class Packet {
 	//bytes array of data
-	byte[] data;
-	//byte[] crc;
+	private byte[] data;
 	//bytes array containing the index of the chunk
-	byte[] index;
+	private byte[] index;
 	//ensemble of index and data separated by a dot
-	byte[] overall;
+	private byte[] overall;
 	//boolean control=false;
-	
-	//Constructor: it takes the array of data and the chunk number
+	/**
+	 * Constructor
+	 * @param d
+	 * 		Data
+	 * @param ind
+	 * 		Index
+	 */
 	Packet(byte[] d, int ind){
 		data=d;
 		//The index of type int is converted to String
@@ -19,94 +27,9 @@ public class Packet {
 		index=str.getBytes();
 	}
 	
-	//Static function to return an object Packet from the string of byte 
-	//received on the net
-	public static Packet recoverData(byte[] b){
-		//overall=b;
-		//Boolean for functions of control
-		boolean indexRead=false, dataRead=false;
-		byte[] data = null; //crc;
-		int index = 0;
-		String str=new String();
-		String ch;
-		//The bytes array is parsed to remove the divisor dot
-		for(int i=0;i<b.length;i++){
-			ch=new String(b,i,1);
-			if(ch.compareTo(".")==0){
-				//The index is identified and memorized
-				if(!indexRead){
-					index=Integer.parseInt(str);
-				}
-				else if(!dataRead){
-					data=str.getBytes();
-					i=b.length;
-				}
-				str=new String();
-			}
-			else
-				str+=ch;
-		}
-		//crc=str.getBytes();
-		//The packet to return is declared and returned
-		Packet p=new Packet(data,index);
-		//p.crc=crc;
-		p.overall=b;
-		return p;
-	}
-	
-	public static Packet recoverDataDot(byte[] b){
-		//overall=b;
-		//Boolean for functions of control
-		byte[] bRev=recvTerminated(b);
-		boolean indexRead=false, dataRead=false;
-		byte[] data = null; //crc;
-		int index = 0;
-		String str=new String();
-		String ch;
-		//The bytes array is parsed to remove the divisor dot
-		for(int i=0;i<bRev.length;i++){
-			ch=new String(bRev,i,1);
-			if(ch.compareTo(".")==0){
-				//The index is identified and memorized
-				if(!indexRead){
-					index=Integer.parseInt(str);
-				}
-				else if(!dataRead){
-					data=str.getBytes();
-					i=bRev.length;
-				}
-				str=new String();
-			}
-			else
-				str+=ch;
-		}
-		//crc=str.getBytes();
-		//The packet to return is declared and returned
-		Packet p=new Packet(data,index);
-		//p.crc=crc;
-		p.overall=bRev;
-		return p;
-	}
-	
-	/*public Packet(byte[] data, boolean ctrl){
-		this.data=data;
-		control=ctrl;
-		if(ctrl){
-			int ind=0;
-			String str=Integer.toString(ind);
-			index=str.getBytes();
-		}
-	}
-	
-	public void computeCrc(){
-		CRC32 com=new CRC32();
-		com.update(data);
-		long numCrc=com.getValue();
-		String strCrc=Long.toString(numCrc);
-		crc=strCrc.getBytes();
-	}*/
-	
-	//Function to setup the overall array with the separator
+	/**
+	 * Function to setup the overall array with the separator
+	 */
 	public void makePack(){
 		byte[] point=".".getBytes();
 		int j=0;
@@ -123,58 +46,92 @@ public class Packet {
 		for(;i<(data.length+j);i++){
 			overall[i]=data[i-j];
 		}
-		/*
-		i=j=index.length+data.length+point.length;
-		for(;i<(j+point.length);i++){
-			overall[i]=point[i-j];
-		}
-		i=index.length+data.length+2*point.length;
-		for(;i<(j+crc.length);i++){
-			overall[i]=crc[i-j];
-		}*/
+		
 	}
-	/*
-	public boolean testCrc(){
-		CRC32 newCrc=new CRC32();
-		long oldCrcValue;
-		long newCrcValue;
-		String parseCrc=new String();
-		//String charact=new String();
-		//for(int i=0;i<crc.length;i++){
-			parseCrc=new String(crc);
-		//}
-		oldCrcValue=Long.parseLong(parseCrc);
-		newCrc.update(data);
-		newCrcValue=newCrc.getValue();
-		if(oldCrcValue==newCrcValue)
-			return true;
-		else
-			return false;
-	}
-	*/
 	
-	//Return the index of the object packet 
+	/**
+	 * Returns the packet index
+	 * @return
+	 * 		Index
+	 */
 	public byte[] getIndex(){
 		return index;
 	}
 	
-	//return the data of the object packet
+	/**
+	 * Returns the packet array of data
+	 * @return
+	 * 		Data
+	 */
 	public byte[] getData(){
 		return data;
 	}
-	/*
-	public byte[] getCrc(){
-		return crc;
-	}
-	*/
 	
-	//return the overall bytes array
+	/**
+	 * Returns the overall array with index and data concatenated 
+	 * @return
+	 * 		Overall array
+	 */
 	public byte[] getOverall(){
 		return overall;
 	}
-	
-	//Function to set up the string of byte with a dot to be recognized
-	//by the server parser
+
+	/**
+	 * Removes the final dot from an array of byte received from the net
+	 * and returns a Packet with the data extracted
+	 * @param b
+	 * 		Array received from the net
+	 * @return
+	 * 		Packet filled with data extracted
+	 */
+	public static Packet recoverDataDot(byte[] b){
+		//Here the final dot is removed
+		byte[] bRev=recvTerminated(b);
+		boolean indexRead=false, dataRead=false;
+		byte[] data = null;
+		int index = 0;
+		String str=new String();
+		String ch;
+		
+		//The bytes array is parsed to remove the divisor dot
+		for(int i=0;i<bRev.length;i++){
+			ch=new String(bRev,i,1);
+			if(ch.compareTo(".")==0){
+				//The index is identified and memorized
+				if(!indexRead){
+					try{
+						index=Integer.parseInt(str);
+						indexRead=true;
+					}
+					catch(NumberFormatException e){
+						return null;
+					}
+				}
+				//Data are memorized
+				else if(!dataRead){
+					data=str.getBytes();
+					i=bRev.length;
+					dataRead=true;
+				}
+				str=new String();
+			}
+			else
+				str+=ch;
+		}
+		//The packet to return is declared and returned
+		Packet p=new Packet(data,index);
+		p.overall=bRev;
+		return p;
+	}
+
+	/**
+	 * Function to set up the string of byte with a dot on tail to be recognized
+	 * by the parser
+	 * @param data
+	 * 		Bytes array
+	 * @return
+	 * 		Bytes array with final dot
+	 */
 	public static byte[] terminate(byte[] data){
 		byte[] point=".".getBytes();
 		byte[] term=new byte[data.length+point.length];
@@ -188,9 +145,17 @@ public class Packet {
 		}
 		return term;
 	}
-	
-	//Function to recover the data from the string of bytes terminated by the dot
-	public static byte[] recvTerminated(byte[] data){
+
+	/**
+	 * Function that parses a received array and removes the final dot inserted
+	 * to understand when the data are finished
+	 * @param data
+	 * 		Array as received from the net
+	 * @return
+	 * 		An array without the final dot
+	 * 		
+	 */
+	private static byte[] recvTerminated(byte[] data){
 		byte[] term = null;
 		boolean ctrl=false;
 		for(int i=data.length-1;i>=0;i--){

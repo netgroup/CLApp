@@ -3,6 +3,11 @@ package AudioCleaning;
 import com.musicg.graphic.GraphicRender;
 import com.musicg.wave.Wave;
 
+/**
+ * Class to render a wave form from a .wav file
+ * @author Daniele De Angelis
+ *
+ */
 public class RenderSingleTrack {
 	
 	public static void main(String[] args){

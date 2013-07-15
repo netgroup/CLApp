@@ -1,19 +1,36 @@
 package CorrelationMatrix;
 
 import java.text.DecimalFormat;
-
+/**
+ * Object correlation matrix
+ * @author Daniele De Angelis
+ *
+ */
 public class CorrelationMatrix {
 	public CorrelationCell[][] matrix;
 	public int dimension;
 	public Integer maxRow=null;
 	
+	/**
+	 * Constructor
+	 */
 	CorrelationMatrix(){
 	}
+	/**
+	 * Constructor
+	 * @param i
+	 * 		Dimension ixi
+	 */
 	public CorrelationMatrix(int i){
 		matrix=new CorrelationCell[i][i];
 		dimension=i;
 	}
-	//function to compute maximum row
+	
+	/**
+	 * Return the maximum row index
+	 * @return
+	 * 		Index
+	 */
 	public int maxRow(){
 		float max=0, sum=0;
 		int indice=0;
@@ -36,6 +53,12 @@ public class CorrelationMatrix {
 		return indice;
 	}
 	
+	
+	/**
+	 * Return the second maximum row index
+	 * @return
+	 * 		Index
+	 */
 	public int secondMaxRow(){
 		float max=0, sum=0;
 		int indice=0;
@@ -58,7 +81,10 @@ public class CorrelationMatrix {
 		}
 		return indice;
 	}
-	//function to draw the matrix
+	
+	/**
+	 * Function that print the matrix on the command line
+	 */
 	public void stamp(){
 		DecimalFormat f = new DecimalFormat("###0.00000");
 		System.out.print("In the cells: correlation, delay.\n\n");
